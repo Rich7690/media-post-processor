@@ -25,4 +25,4 @@ RUN apk add ffmpeg tini
 VOLUME /config
 EXPOSE 8080
 ENV GIN_MODE=release
-CMD ["/usr/bin/tini","--","./main"]
+CMD ["/sbin/tini","--","./main"]
