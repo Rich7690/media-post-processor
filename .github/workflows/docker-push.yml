@@ -1,8 +1,9 @@
 name: Docker Push
 on:
-  create:
+  push:
     tags:
       - 'v*'
+
 jobs:
   docker:
     name: Docker Push
