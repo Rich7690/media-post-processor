@@ -2,8 +2,7 @@ name: Docker Push
 on:
   push:
     tags:
-      - 'v*'
-
+      - '*'
 jobs:
   docker:
     name: Docker Push
