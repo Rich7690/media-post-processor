@@ -10,6 +10,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v1
+        env:
+          IMAGE_NAME=web
       - name: Build image
         run: docker build . --file Dockerfile --tag image
 
@@ -17,8 +19,6 @@ jobs:
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
 
       - name: Push image
-        env:
-          - IMAGE_NAME=web
         run: |
           IMAGE_ID=docker.pkg.github.com/${{ github.repository }}/$IMAGE_NAME
           # Strip git ref prefix from version
