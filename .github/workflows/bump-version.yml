@@ -1,4 +1,4 @@
-name: Bump version
+name: Master Build and Version Bump
 on:
   push:
     branches:

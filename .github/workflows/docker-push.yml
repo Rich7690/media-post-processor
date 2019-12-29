@@ -1,11 +1,11 @@
-name: Docker PR
+name: Docker Push
 on:
   create:
     tags:
       - v*
 jobs:
   docker:
-    name: Docker Build
+    name: Docker Push
     runs-on: ubuntu-latest
 
     steps:
