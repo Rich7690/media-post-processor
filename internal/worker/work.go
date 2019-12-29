@@ -22,8 +22,15 @@ type Webhook struct {
 	EventType string `json:"eventType"`
 }
 
-// Make an enqueuer with a particular namespace
-var Enqueuer = work.NewEnqueuer(constants.JobQueueNamespace, &storage.RedisPool)
+type WorkScheduler struct {
+	EnqueueUnique func(jobName string, args map[string]interface{}) (*work.Job, error)
+}
+
+var worker = work.NewEnqueuer(constants.JobQueueNamespace, &storage.RedisPool)
+
+var Enqueuer = WorkScheduler{
+	EnqueueUnique: worker.EnqueueUnique,
+}
 
 func (c *Webhook) Log(job *work.Job, next work.NextMiddlewareFunc) error {
 	fmt.Println("Starting job: ", job.ID)
@@ -31,57 +38,30 @@ func (c *Webhook) Log(job *work.Job, next work.NextMiddlewareFunc) error {
 }
 
 func getMovieFilePath(id int64) (string, error) {
-	if constants.IsLocal {
-		log.Println("Local request. Getting from data store")
-		webhookData := web.RadarrWebhook{}
-
-		err := webhookData.GetWebhookData(constants.Movie, id)
-
-		if err != nil {
-			return "", err
-		}
-
-		return webhookData.MovieFile.Path, nil
-
-	} else {
-		movie, err := web.LookupMovie(id)
-		if err != nil {
-			return "", err
-		}
-		if movie != nil {
-			fmt.Println("Got movie: ", movie.Title)
-			return movie.Path + "/" + movie.MovieFile.RelativePath, nil
-		} else {
-			fmt.Println("Could not find movie")
-		}
+	movie, err := web.LookupMovie(id)
+	if err != nil {
+		return "", err
 	}
+	if movie != nil {
+		fmt.Println("Got movie: ", movie.Title)
+		return movie.Path + "/" + movie.MovieFile.RelativePath, nil
+	} else {
+		fmt.Println("Could not find movie")
+	}
+
 	return "", nil
 }
 
 func getEpisodeFilePath(id int64) (string, int, error) {
-	if constants.IsLocal {
-		log.Println("Local request. Getting from data store")
-		webhookData := web.SonarrWebhook{}
-
-		var err error = nil //webhookData.GetWebhookData(constants.Movie, id)
-
-		if err != nil {
-			return "", -1, err
-		}
-
-		return webhookData.EpisodeFile.Path, webhookData.Series.ID, nil
-
+	episodeFile, err := web.LookupTVEpisode(id)
+	if err != nil {
+		return "", -1, err
+	}
+	if episodeFile != nil {
+		fmt.Println("Got episodeFile: ", episodeFile.RelativePath)
+		return episodeFile.Path, episodeFile.SeriesID, nil
 	} else {
-		episodeFile, err := web.LookupTVEpisode(id)
-		if err != nil {
-			return "", -1, err
-		}
-		if episodeFile != nil {
-			fmt.Println("Got episodeFile: ", episodeFile.RelativePath)
-			return episodeFile.Path, episodeFile.SeriesID, nil
-		} else {
-			fmt.Println("Could not find episodeFile")
-		}
+		fmt.Println("Could not find episodeFile")
 	}
 	return "", -1, nil
 }
@@ -225,8 +205,9 @@ func (c *Webhook) DoTranscode(job *work.Job) error {
 
 	// Example of printing transcoding progress
 	for msg := range progress {
-		fmt.Println(msg)
-		job.Checkin(fmt.Sprint(msg))
+		message := "Transcoding: " + inputFilePath + " -> " + fmt.Sprint(msg)
+		fmt.Println(message)
+		job.Checkin(message)
 	}
 
 	// This channel is used to wait for the transcoding process to end

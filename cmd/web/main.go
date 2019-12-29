@@ -22,7 +22,7 @@ func main() {
 	r := gin.Default()
 
 	r.GET("/health", controllers.HealthHandler)
-	r.POST("/api/radarr/webhook", controllers.RadarrWebhookHandler)
+	r.POST("/api/radarr/webhook", controllers.GetRadarrWebhookHandler(worker.Enqueuer))
 	r.POST("/api/sonarr/webhook", controllers.SonarrWebhookHandler)
 
 	err := r.Run()

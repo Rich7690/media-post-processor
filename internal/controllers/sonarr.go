@@ -2,12 +2,10 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gocraft/work"
 	"github.com/rs/zerolog/log"
 	"media-web/internal/constants"
-	"media-web/internal/storage"
 	"media-web/internal/web"
 	"media-web/internal/worker"
 )
@@ -35,30 +33,6 @@ func SonarrWebhookHandler(c *gin.Context) {
 	switch body.EventType {
 	case "Test":
 		log.Info().Msg("Got Test request")
-		if constants.IsLocal {
-			bytes, err := json.Marshal(body)
-
-			_, err = storage.RedisPool.Get().Do("SET", fmt.Sprintf("series-webhook-%d", body.EpisodeFile.ID), bytes)
-
-			if err != nil {
-				log.Error().Err(err).Msg("Failed to save body")
-				c.JSON(500, gin.H{"message": "Failed to save body"})
-				return
-			}
-
-			job, err := worker.Enqueuer.EnqueueUnique(constants.TranscodeJobType, work.Q{
-				constants.EpisodeFileIdKey: body.EpisodeFile.ID,
-				constants.TranscodeTypeKey: constants.TV,
-			})
-
-			if err != nil {
-				log.Error().Err(err).Msg("Failed to enqueue work")
-				c.JSON(500, gin.H{"message": "Failed to enqueue work"})
-				return
-			}
-
-			log.Printf("Enqueued job: %s", job.ID)
-		}
 		break
 	case "Download":
 		log.Info().Msg("Got Download request")
