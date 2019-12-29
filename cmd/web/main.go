@@ -15,7 +15,6 @@ func main() {
 	if constants.IsLocal {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout})
 	}
-
 	log.Info().Msg("Starting server")
 
 	go worker.WorkerPool()
