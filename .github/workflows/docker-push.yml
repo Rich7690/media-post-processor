@@ -10,8 +10,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v1
-        env:
-          IMAGE_NAME: web
       - name: Build image
         run: docker build . --file Dockerfile --tag image
 
@@ -20,7 +18,7 @@ jobs:
 
       - name: Push image
         run: |
-          IMAGE_ID=docker.pkg.github.com/${{ github.repository }}/$IMAGE_NAME
+          IMAGE_ID=docker.pkg.github.com/${{ github.repository }}/web
           # Strip git ref prefix from version
           VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
           # Strip "v" prefix from tag name
