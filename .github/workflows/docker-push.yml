@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v1
         env:
-          IMAGE_NAME=web
+          IMAGE_NAME: web
       - name: Build image
         run: docker build . --file Dockerfile --tag image
 
