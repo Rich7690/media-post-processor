@@ -31,9 +31,6 @@ func SonarrWebhookHandler(c *gin.Context) {
 	}
 
 	switch body.EventType {
-	case "Test":
-		log.Info().Msg("Got Test request")
-		break
 	case "Download":
 		log.Info().Msg("Got Download request")
 		job, err := worker.Enqueuer.EnqueueUnique(constants.TranscodeJobType, work.Q{
@@ -47,10 +44,7 @@ func SonarrWebhookHandler(c *gin.Context) {
 			return
 		}
 
-		log.Printf("Enqueued job: %s", job.ID)
-		break
-	case "Rename":
-		log.Info().Msg("Got Rename Request")
+		log.Info().Msg("Enqueued job: " + job.ID)
 		break
 	}
 

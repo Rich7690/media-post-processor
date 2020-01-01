@@ -22,7 +22,7 @@ func TestReturnsErrorForBadPayload(t *testing.T) {
 
 	m := worker.WorkScheduler{
 		EnqueueUnique: func(jobName string, args map[string]interface{}) (*work.Job, error) {
-			return nil,nil
+			return nil, nil
 		},
 	}
 
@@ -58,7 +58,7 @@ func TestEnqueuesJobForValidInput(t *testing.T) {
 			count++
 			hitJobName = jobName
 			hitArgs = args
-			return &work.Job{ID:"mockJob"},nil
+			return &work.Job{ID: "mockJob"}, nil
 		},
 	}
 

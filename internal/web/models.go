@@ -10,7 +10,6 @@ import (
 	"time"
 )
 
-
 type SonarrCommand struct {
 	Name                string    `json:"name"`
 	StartedOn           time.Time `json:"startedOn"`

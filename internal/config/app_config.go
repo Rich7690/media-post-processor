@@ -2,6 +2,8 @@ package config
 
 import "os"
 
+var enableWeb = os.Getenv("ENABLE_WEB")
+var enableWorker = os.Getenv("ENABLE_WORKER")
 var radarAPIKey = os.Getenv("RADARR_API_KEY")
 var radarBaseEndpoint = os.Getenv("RADARR_BASE_ENDPOINT")
 var sonarrAPIKey = os.Getenv("SONARR_API_KEY")
@@ -9,6 +11,15 @@ var sonarrBaseEndpoint = os.Getenv("SONARR_BASE_ENDPOINT")
 var redisAddress = os.Getenv("REDIS_ADDRESS")
 var ffmpegBin = os.Getenv("FFMPEG_PATH")
 var ffprobeBin = os.Getenv("FFPROBE_PATH")
+
+
+func EnableWeb() bool {
+	return enableWeb == "true"
+}
+
+func EnableWorker() bool {
+	return enableWorker == "true"
+}
 
 func GetFfmpegPath() string {
 	if ffmpegBin != "" {
