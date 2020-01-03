@@ -45,10 +45,11 @@ func startRadarrScanner() {
 	exitChan := make(chan os.Signal, 1)
 	signal.Notify(exitChan, os.Interrupt, os.Kill)
 	repeat := make(chan bool)
+	repeat <- true // queue up first one to kick it off on start
 	for {
 		go func() {
-			repeat <- true
 			<-time.After(8 * time.Hour)
+			repeat <- true
 		}()
 
 		select {
