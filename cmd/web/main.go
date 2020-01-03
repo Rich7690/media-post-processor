@@ -42,9 +42,10 @@ func startWorker() {
 }
 
 func startRadarrScanner() {
+	log.Info().Msg("Starting scanner")
 	exitChan := make(chan os.Signal, 1)
 	signal.Notify(exitChan, os.Interrupt, os.Kill)
-	repeat := make(chan bool)
+	repeat := make(chan bool, 1)
 	repeat <- true // queue up first one to kick it off on start
 	for {
 		go func() {
@@ -56,6 +57,7 @@ func startRadarrScanner() {
 		case <-exitChan:
 			return
 		case <-repeat:
+			log.Info().Msg("Scanning for movies in wrong format")
 			err := worker.ScanForMovies()
 			if err != nil {
 				log.Err(err).Msg("Error scanning for movies")
