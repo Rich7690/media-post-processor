@@ -23,9 +23,6 @@ func GetRadarrWebhookHandler(scheduler worker.WorkScheduler) (func(c *gin.Contex
 		}
 
 		switch body.EventType {
-		case "Test":
-			log.Info().Msg("Got Test request")
-			break
 		case "Download":
 			log.Info().Msg("Got Download request")
 
@@ -41,9 +38,6 @@ func GetRadarrWebhookHandler(scheduler worker.WorkScheduler) (func(c *gin.Contex
 			}
 
 			log.Printf("Enqueued job: %s", job.ID)
-			break
-		case "Rename":
-			log.Info().Msg("Got Rename Request")
 			break
 		}
 

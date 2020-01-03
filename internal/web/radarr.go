@@ -144,3 +144,47 @@ func LookupMovie(id int64) (*RadarrMovie, error) {
 		return nil, errors.New("Failed find movie")
 	}
 }
+
+func GetAllMovies() ([]RadarrMovie, error) {
+	response := make([]RadarrMovie, 1)
+	request, err := http.NewRequest("GET", fmt.Sprintf("%s/api/movie/?apikey=%s", config.GetRadarBaseEndpoint(), config.GetRadarAPIKey()), nil)
+
+	if err != nil {
+		return nil, err
+	}
+	resp, err := netClient.Do(request)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode == 404 {
+		return response, nil
+	}
+
+	if resp.StatusCode == 200 {
+
+		err = json.Unmarshal(body, &response)
+
+		if err != nil {
+			log.Println("Got error parsing json: ", err.Error())
+			log.Println(string(body))
+			return nil, err
+		}
+
+		return response, nil
+
+	} else {
+		log.Println(resp.StatusCode)
+		log.Println(string(body))
+		return nil, errors.New("Failed to get movies")
+	}
+}

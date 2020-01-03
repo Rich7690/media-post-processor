@@ -11,7 +11,11 @@ var sonarrBaseEndpoint = os.Getenv("SONARR_BASE_ENDPOINT")
 var redisAddress = os.Getenv("REDIS_ADDRESS")
 var ffmpegBin = os.Getenv("FFMPEG_PATH")
 var ffprobeBin = os.Getenv("FFPROBE_PATH")
+var enableRadarrScanner = os.Getenv("ENABLE_RADARR_SCANNER")
 
+func EnableRadarrScanner() bool {
+	return enableRadarrScanner == "true"
+}
 
 func EnableWeb() bool {
 	return enableWeb == "true"

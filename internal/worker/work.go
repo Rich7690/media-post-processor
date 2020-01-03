@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gocraft/work"
 	"github.com/xfrr/goffmpeg/ffmpeg"
+	"github.com/xfrr/goffmpeg/models"
 	"github.com/xfrr/goffmpeg/transcoder"
 	"log"
 	"media-web/internal/config"
@@ -38,6 +39,7 @@ func (c *Webhook) Log(job *work.Job, next work.NextMiddlewareFunc) error {
 }
 
 func getMovieFilePath(id int64) (string, error) {
+
 	movie, err := web.LookupMovie(id)
 	if err != nil {
 		return "", err
@@ -64,6 +66,36 @@ func getEpisodeFilePath(id int64) (string, int, error) {
 		fmt.Println("Could not find episodeFile")
 	}
 	return "", -1, nil
+}
+
+func  ScanForMovies() error {
+
+	movies, err := web.GetAllMovies()
+
+	if err != nil {
+		return err
+	}
+
+	for i :=0 ; i < len(movies);i++ {
+		movie := movies[i]
+		if movie.Downloaded {
+			ext := filepath.Ext(movie.MovieFile.RelativePath)
+
+			if ext != ".mp4" {
+				log.Println("Found movie in wrong format: " + movie.MovieFile.RelativePath)
+				_, err := Enqueuer.EnqueueUnique(constants.TranscodeJobType, work.Q{
+					constants.TranscodeTypeKey: constants.Movie,
+					constants.MovieIdKey:       movie.ID,
+				})
+				if err != nil {
+					log.Println("Error: ", err.Error())
+				}
+			}
+		}
+	}
+
+
+	return nil
 }
 
 func (c *Webhook) UpdateTVShow(job *work.Job) error {
@@ -126,7 +158,37 @@ func (c *Webhook) UpdateMovie(job *work.Job) (error) {
 	return nil
 }
 
-func (c *Webhook) DoTranscode(job *work.Job) error {
+type Transcoder struct {
+	SetConfiguration func(config ffmpeg.Configuration)
+	Initialize func(input string, output string) error
+	MediaFile func() *models.Mediafile
+	Output func() <-chan models.Progress
+	Run func(progress bool) <-chan error
+}
+
+func GetTranscoder () Transcoder {
+	trans := transcoder.Transcoder{}
+	return Transcoder{
+		SetConfiguration: func(config ffmpeg.Configuration) {
+			trans.SetConfiguration(config)
+		},
+		Initialize: func(input string, output string) error {
+			return trans.Initialize(input, output)
+		},
+		MediaFile: func() *models.Mediafile {
+			return trans.MediaFile()
+		},
+		Output: func() <-chan models.Progress {
+			return trans.Output()
+		},
+		Run: func(progress bool) <-chan error {
+			return trans.Run(progress)
+		},
+	}
+}
+
+
+func doTranscode(trans Transcoder, job *work.Job) error {
 	transcodeType := constants.TranscodeType(job.ArgString(constants.TranscodeTypeKey))
 
 	var inputFilePath = ""
@@ -150,14 +212,14 @@ func (c *Webhook) DoTranscode(job *work.Job) error {
 		return err
 	}
 
+
 	if inputFilePath != "" {
 		log.Println("Working on transcode at path: ", inputFilePath)
 	} else {
 		log.Println("Could not get input file path")
 		return nil
 	}
-	// Create new instance of transcoder
-	trans := new(transcoder.Transcoder)
+
 	trans.SetConfiguration(ffmpeg.Configuration{
 		FfmpegBin:  config.GetFfmpegPath(),
 		FfprobeBin: config.GetFfprobePath(),
@@ -199,6 +261,8 @@ func (c *Webhook) DoTranscode(job *work.Job) error {
 
 	// Start transcoder process with progress checking
 	done := trans.Run(true)
+	//done := make(chan error, 1)
+	//done <- nil
 
 	// Returns a channel to get the transcoding progress
 	progress := trans.Output()
@@ -254,6 +318,12 @@ func (c *Webhook) DoTranscode(job *work.Job) error {
 	return err
 }
 
+func (c *Webhook) TranscodeJobHandler(job *work.Job) error {
+	// Create new instance of transcoder
+	trans := GetTranscoder()
+	return doTranscode(trans, job)
+}
+
 func WorkerPool() {
 	log.Println("Starting worker pool")
 	// Make a new pool. Arguments:
@@ -273,7 +343,7 @@ func WorkerPool() {
 		MaxFails:       3,
 		SkipDead:       false,
 		MaxConcurrency: 1,
-	}, (*Webhook).DoTranscode)
+	}, (*Webhook).TranscodeJobHandler)
 
 	pool.JobWithOptions("update-sonarr", work.JobOptions{
 		Priority:       2,

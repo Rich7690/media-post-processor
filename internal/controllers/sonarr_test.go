@@ -1,23 +1,23 @@
 package controllers
 
 import (
-	"bytes"
-	"encoding/json"
-	"errors"
-	"github.com/gin-gonic/gin"
-	"github.com/gocraft/work"
-	"github.com/golang/mock/gomock"
-	"io/ioutil"
-	"media-web/internal/constants"
-	"media-web/internal/helper"
-	"media-web/internal/web"
-	"media-web/internal/worker"
-	"net/http"
-	"net/http/httptest"
-	"testing"
+"bytes"
+"encoding/json"
+"errors"
+"github.com/gin-gonic/gin"
+"github.com/gocraft/work"
+"github.com/golang/mock/gomock"
+"io/ioutil"
+"media-web/internal/constants"
+"media-web/internal/helper"
+"media-web/internal/web"
+"media-web/internal/worker"
+"net/http"
+"net/http/httptest"
+"testing"
 )
 
-func TestReturnsErrorForBadPayload(t *testing.T) {
+func TestSonarrReturnsErrorForBadPayload(t *testing.T) {
 
 	m := worker.WorkScheduler{
 		EnqueueUnique: func(jobName string, args map[string]interface{}) (*work.Job, error) {
@@ -27,11 +27,11 @@ func TestReturnsErrorForBadPayload(t *testing.T) {
 
 	r := gin.Default()
 
-	r.POST("/api/radarr/webhook", GetRadarrWebhookHandler(m))
+	r.POST("/api/sonarr/webhook", GetSonarrWebhookHandler(m))
 
 	body := bytes.NewBufferString("Not valid json")
 
-	req, _ := http.NewRequest("POST", "/api/radarr/webhook", body)
+	req, _ := http.NewRequest("POST", "/api/sonarr/webhook", body)
 
 	helper.GetHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
 		statusOK := w.Code == http.StatusBadRequest
@@ -43,7 +43,7 @@ func TestReturnsErrorForBadPayload(t *testing.T) {
 	})
 }
 
-func TestReturnsErrorForFailedEnqueue(t *testing.T) {
+func TestSonarrReturnsErrorForFailedEnqueue(t *testing.T) {
 
 	m := worker.WorkScheduler{
 		EnqueueUnique: func(jobName string, args map[string]interface{}) (*work.Job, error) {
@@ -53,9 +53,9 @@ func TestReturnsErrorForFailedEnqueue(t *testing.T) {
 
 	r := gin.Default()
 
-	r.POST("/api/radarr/webhook", GetRadarrWebhookHandler(m))
+	r.POST("/api/sonarr/webhook", GetSonarrWebhookHandler(m))
 
-	body := web.RadarrWebhook{EventType: "Download"}
+	body := web.SonarrWebhook{EventType: "Download"}
 
 	payload, err := json.Marshal(body)
 
@@ -63,7 +63,7 @@ func TestReturnsErrorForFailedEnqueue(t *testing.T) {
 		t.Error("Failed to encode json")
 	}
 
-	req, _ := http.NewRequest("POST", "/api/radarr/webhook", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/sonarr/webhook", bytes.NewBuffer(payload))
 
 	helper.GetHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
 		statusOK := w.Code == http.StatusInternalServerError
@@ -75,7 +75,7 @@ func TestReturnsErrorForFailedEnqueue(t *testing.T) {
 	})
 }
 
-func TestEnqueuesJobForValidInput(t *testing.T) {
+func TestSonarrEnqueuesJobForValidInput(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -95,9 +95,9 @@ func TestEnqueuesJobForValidInput(t *testing.T) {
 
 	r := gin.Default()
 
-	r.POST("/api/radarr/webhook", GetRadarrWebhookHandler(m))
+	r.POST("/api/sonarr/webhook", GetSonarrWebhookHandler(m))
 
-	body := web.RadarrWebhook{EventType: "Download"}
+	body := web.SonarrWebhook{EventType: "Download"}
 
 	payload, err := json.Marshal(body)
 
@@ -105,7 +105,7 @@ func TestEnqueuesJobForValidInput(t *testing.T) {
 		t.Error("Failed to encode json")
 	}
 
-	req, _ := http.NewRequest("POST", "/api/radarr/webhook", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/sonarr/webhook", bytes.NewBuffer(payload))
 
 	helper.GetHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
 		statusOK := w.Code == http.StatusOK
@@ -114,9 +114,10 @@ func TestEnqueuesJobForValidInput(t *testing.T) {
 		pageOK := err == nil
 
 		match := hitJobName == constants.TranscodeJobType &&
-			hitArgs[constants.TranscodeTypeKey] == constants.Movie &&
-			hitArgs[constants.MovieIdKey] == 0
+			hitArgs[constants.TranscodeTypeKey] == constants.TV &&
+			hitArgs[constants.EpisodeFileIdKey] == 0
 
 		return statusOK && pageOK && match
 	})
 }
+

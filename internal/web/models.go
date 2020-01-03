@@ -1,12 +1,7 @@
 package web
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/gomodule/redigo/redis"
-	"log"
 	"media-web/internal/constants"
-	"media-web/internal/storage"
 	"time"
 )
 
@@ -67,24 +62,6 @@ type RadarrWebhook struct {
 		ReleaseGroup   string `json:"releaseGroup"`
 	} `json:"movieFile"`
 	IsUpgrade bool `json:"isUpgrade"`
-}
-
-func (r *RadarrWebhook) GetWebhookData(transcodeType constants.TranscodeType, id int64) error {
-	result, err := redis.Bytes(storage.RedisPool.Get().Do("GET", fmt.Sprintf("%s-webhook-%d", transcodeType, id)))
-
-	if err != nil {
-		log.Println(err.Error())
-		return err
-	}
-
-	err = json.Unmarshal(result, &r)
-
-	if err != nil {
-		log.Println(err.Error())
-		return err
-	}
-
-	return nil
 }
 
 type SonarrWebhook struct {

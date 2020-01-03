@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/gocraft/work"
 	"github.com/rs/zerolog/log"
@@ -10,43 +9,37 @@ import (
 	"media-web/internal/worker"
 )
 
-func SonarrWebhookHandler(c *gin.Context) {
-	body := web.SonarrWebhook{}
-	err := c.ShouldBindJSON(&body)
-
-	if err != nil {
-		log.Err(err).Msg("Failed to bind json")
-		c.JSON(400, gin.H{
-			"message": "Invalid input",
-		})
-		return
-	}
-
-	// Convert structs to JSON.
-	data, err := json.Marshal(body)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to marshal json")
-	} else {
-		log.Info().RawJSON("data", data).Msg("Encoded json")
-	}
-
-	switch body.EventType {
-	case "Download":
-		log.Info().Msg("Got Download request")
-		job, err := worker.Enqueuer.EnqueueUnique(constants.TranscodeJobType, work.Q{
-			constants.EpisodeFileIdKey: body.EpisodeFile.ID,
-			constants.TranscodeTypeKey: constants.TV,
-		})
+func GetSonarrWebhookHandler(scheduler worker.WorkScheduler) (func(c *gin.Context)) {
+	return func(c *gin.Context) {
+		body := web.SonarrWebhook{}
+		err := c.ShouldBindJSON(&body)
 
 		if err != nil {
-			log.Error().Err(err).Msg("Failed to enqueue work")
-			c.JSON(500, gin.H{"message": "Failed to enqueue work"})
+			log.Err(err).Msg("Failed to bind json")
+			c.JSON(400, gin.H{
+				"message": "Invalid input",
+			})
 			return
 		}
 
-		log.Info().Msg("Enqueued job: " + job.ID)
-		break
-	}
+		switch body.EventType {
+		case "Download":
+			log.Info().Msg("Got Download request")
+			job, err := scheduler.EnqueueUnique(constants.TranscodeJobType, work.Q{
+				constants.EpisodeFileIdKey: body.EpisodeFile.ID,
+				constants.TranscodeTypeKey: constants.TV,
+			})
 
-	c.JSON(200, body)
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to enqueue work")
+				c.JSON(500, gin.H{"message": "Failed to enqueue work"})
+				return
+			}
+
+			log.Info().Msg("Enqueued job: " + job.ID)
+			break
+		}
+
+		c.JSON(200, body)
+	}
 }
