@@ -1,20 +1,20 @@
 package controllers
 
 import (
-"bytes"
-"encoding/json"
-"errors"
-"github.com/gin-gonic/gin"
-"github.com/gocraft/work"
-"github.com/golang/mock/gomock"
-"io/ioutil"
-"media-web/internal/constants"
-"media-web/internal/helper"
-"media-web/internal/web"
-"media-web/internal/worker"
-"net/http"
-"net/http/httptest"
-"testing"
+	"bytes"
+	"encoding/json"
+	"errors"
+	"github.com/gin-gonic/gin"
+	"github.com/gocraft/work"
+	"github.com/golang/mock/gomock"
+	"io/ioutil"
+	"media-web/internal/constants"
+	"media-web/internal/helper"
+	"media-web/internal/web"
+	"media-web/internal/worker"
+	"net/http"
+	"net/http/httptest"
+	"testing"
 )
 
 func TestSonarrReturnsErrorForBadPayload(t *testing.T) {
@@ -120,4 +120,3 @@ func TestSonarrEnqueuesJobForValidInput(t *testing.T) {
 		return statusOK && pageOK && match
 	})
 }
-

@@ -68,7 +68,7 @@ func getEpisodeFilePath(id int64) (string, int, error) {
 	return "", -1, nil
 }
 
-func  ScanForMovies() error {
+func ScanForMovies() error {
 
 	movies, err := web.GetAllMovies()
 
@@ -76,7 +76,7 @@ func  ScanForMovies() error {
 		return err
 	}
 
-	for i :=0 ; i < len(movies);i++ {
+	for i := 0; i < len(movies); i++ {
 		movie := movies[i]
 		if movie.Downloaded {
 			ext := filepath.Ext(movie.MovieFile.RelativePath)
@@ -93,7 +93,6 @@ func  ScanForMovies() error {
 			}
 		}
 	}
-
 
 	return nil
 }
@@ -128,7 +127,7 @@ func (c *Webhook) UpdateTVShow(job *work.Job) error {
 	return err
 }
 
-func (c *Webhook) UpdateMovie(job *work.Job) (error) {
+func (c *Webhook) UpdateMovie(job *work.Job) error {
 	movieId := job.ArgInt64(constants.MovieIdKey)
 
 	cmd, err := web.RescanMovie(movieId)
@@ -160,13 +159,13 @@ func (c *Webhook) UpdateMovie(job *work.Job) (error) {
 
 type Transcoder struct {
 	SetConfiguration func(config ffmpeg.Configuration)
-	Initialize func(input string, output string) error
-	MediaFile func() *models.Mediafile
-	Output func() <-chan models.Progress
-	Run func(progress bool) <-chan error
+	Initialize       func(input string, output string) error
+	MediaFile        func() *models.Mediafile
+	Output           func() <-chan models.Progress
+	Run              func(progress bool) <-chan error
 }
 
-func GetTranscoder () Transcoder {
+func GetTranscoder() Transcoder {
 	trans := transcoder.Transcoder{}
 	return Transcoder{
 		SetConfiguration: func(config ffmpeg.Configuration) {
@@ -186,7 +185,6 @@ func GetTranscoder () Transcoder {
 		},
 	}
 }
-
 
 func doTranscode(trans Transcoder, job *work.Job) error {
 	transcodeType := constants.TranscodeType(job.ArgString(constants.TranscodeTypeKey))
@@ -211,7 +209,6 @@ func doTranscode(trans Transcoder, job *work.Job) error {
 		log.Println("Error: " + err.Error())
 		return err
 	}
-
 
 	if inputFilePath != "" {
 		log.Println("Working on transcode at path: ", inputFilePath)
@@ -358,7 +355,6 @@ func WorkerPool() {
 		SkipDead:       false,
 		MaxConcurrency: 5,
 	}, (*Webhook).UpdateMovie)
-
 
 	// Start processing jobs
 	pool.Start()

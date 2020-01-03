@@ -15,7 +15,6 @@ import (
 )
 
 type nullWriter struct {
-
 }
 
 func (w nullWriter) Write(p []byte) (n int, err error) {
@@ -23,7 +22,6 @@ func (w nullWriter) Write(p []byte) (n int, err error) {
 }
 
 type writer struct {
-
 }
 
 func (w writer) Write(p []byte) (n int, err error) {
@@ -32,7 +30,6 @@ func (w writer) Write(p []byte) (n int, err error) {
 }
 
 type errorWriter struct {
-
 }
 
 func (w errorWriter) Write(p []byte) (n int, err error) {
@@ -56,14 +53,14 @@ func startRadarrScanner() {
 		}()
 
 		select {
-			case <- exitChan:
-				return
-			case <- repeat:
-				err := worker.ScanForMovies()
-				if err != nil {
-					log.Err(err).Msg("Error scanning for movies")
-				}
-				break
+		case <-exitChan:
+			return
+		case <-repeat:
+			err := worker.ScanForMovies()
+			if err != nil {
+				log.Err(err).Msg("Error scanning for movies")
+			}
+			break
 		}
 	}
 }

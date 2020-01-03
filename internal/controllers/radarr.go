@@ -9,8 +9,8 @@ import (
 	"media-web/internal/worker"
 )
 
-func GetRadarrWebhookHandler(scheduler worker.WorkScheduler) (func(c *gin.Context)) {
-	return func (c *gin.Context) {
+func GetRadarrWebhookHandler(scheduler worker.WorkScheduler) func(c *gin.Context) {
+	return func(c *gin.Context) {
 		body := web.RadarrWebhook{}
 		err := c.ShouldBindJSON(&body)
 

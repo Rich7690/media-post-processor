@@ -9,7 +9,7 @@ import (
 	"media-web/internal/worker"
 )
 
-func GetSonarrWebhookHandler(scheduler worker.WorkScheduler) (func(c *gin.Context)) {
+func GetSonarrWebhookHandler(scheduler worker.WorkScheduler) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		body := web.SonarrWebhook{}
 		err := c.ShouldBindJSON(&body)
