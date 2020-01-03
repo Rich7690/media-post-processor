@@ -39,6 +39,9 @@ This service can be used in docker-compose as follows:
      - FFPROBE_PATH=/usr/bin/ffprobe # Optional: Defaults to alpine linux install location. 
      - SONARR_BASE_ENDPOINT=http://some-path-to-sonarr.com # Optional: Only enable if you want Sonarr integration
      - RADARR_BASE_ENDPOINT=https://some-path-radarr.com # Optional: Only enable if you want Radarr integration
+     - ENABLE_RADARR_SCANNER=true # Use to enable individual components of the app. 
+     - ENABLE_WEB=true # This enables the webhook web service. 
+     - ENABLE_WORKER=true # This enables background transcoder. This allows you to deploy them in separate containers
 ```
 
 Radarr or Sonarr should then be configured on the Connect section as follows:

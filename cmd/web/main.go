@@ -8,7 +8,6 @@ import (
 	"media-web/internal/constants"
 	"media-web/internal/controllers"
 	"media-web/internal/worker"
-	"net/http"
 	"os"
 	"os/signal"
 	"time"
@@ -48,8 +47,8 @@ func startRadarrScanner() {
 	repeat := make(chan bool)
 	for {
 		go func() {
-			<-time.After(1 * time.Hour)
 			repeat <- true
+			<-time.After(8 * time.Hour)
 		}()
 
 		select {
@@ -70,14 +69,6 @@ func startWebserver() {
 	gin.DefaultWriter = writer{}
 	gin.DefaultErrorWriter = errorWriter{}
 	r := gin.Default()
-
-	r.LoadHTMLGlob("templates/*")
-	//router.LoadHTMLFiles("templates/template1.html", "templates/template2.html")
-	r.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "index.tmpl", gin.H{
-			"title": "Main website",
-		})
-	})
 
 	r.GET("/health", controllers.HealthHandler)
 	r.POST("/api/radarr/webhook", controllers.GetRadarrWebhookHandler(worker.Enqueuer))
