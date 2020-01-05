@@ -128,11 +128,11 @@ func main() {
 	}
 
 	if config.EnableRadarrScanner() {
-		//go startRadarrScanner()
+		go startRadarrScanner()
 	}
 
 	if config.EnableSonarrScanner() {
-		//go startSonarrScanner()
+		go startSonarrScanner()
 	}
 
 	log.Debug().Msg("Waiting for exit signal")
