@@ -44,6 +44,8 @@ This service can be used in docker-compose as follows:
      - ENABLE_WORKER=true # This enables background transcoder. This allows you to deploy them in separate containers
 ```
 
+You can use the `latest` tag if you always want the latest release. If you want stable releases, pick the most recent working version tag on docker hub and test fully after upgrading versions. Eventually, I will try to have a more stable `1.x` release
+
 Radarr or Sonarr should then be configured on the Connect section as follows:
 ![](https://i.imgur.com/b5AqAlJ.png)
 

@@ -41,15 +41,42 @@ func startWorker() {
 	worker.WorkerPool()
 }
 
-func startRadarrScanner() {
-	log.Info().Msg("Starting scanner")
+func startSonarrScanner() {
+	log.Info().Msg("Starting Sonarr scanner")
 	exitChan := make(chan os.Signal, 1)
 	signal.Notify(exitChan, os.Interrupt, os.Kill)
 	repeat := make(chan bool, 1)
 	repeat <- true // queue up first one to kick it off on start
 	for {
 		go func() {
-			<-time.After(8 * time.Hour)
+			<-time.After(12 * time.Hour)
+			repeat <- true
+		}()
+
+		select {
+		case <-exitChan:
+			return
+		case <-repeat:
+			log.Info().Msg("Scanning for TV in wrong format")
+			err := worker.ScanForTVShows()
+			log.Info().Msg("Done scanning for TV shows")
+			if err != nil {
+				log.Err(err).Msg("Error scanning for TV shows")
+			}
+			break
+		}
+	}
+}
+
+func startRadarrScanner() {
+	log.Info().Msg("Starting Radarr scanner")
+	exitChan := make(chan os.Signal, 1)
+	signal.Notify(exitChan, os.Interrupt, os.Kill)
+	repeat := make(chan bool, 1)
+	repeat <- true // queue up first one to kick it off on start
+	for {
+		go func() {
+			<-time.After(12 * time.Hour)
 			repeat <- true
 		}()
 
@@ -59,6 +86,7 @@ func startRadarrScanner() {
 		case <-repeat:
 			log.Info().Msg("Scanning for movies in wrong format")
 			err := worker.ScanForMovies()
+			log.Info().Msg("Done scanning for movies")
 			if err != nil {
 				log.Err(err).Msg("Error scanning for movies")
 			}
@@ -100,6 +128,10 @@ func main() {
 
 	if config.EnableRadarrScanner() {
 		go startRadarrScanner()
+	}
+
+	if config.EnableSonarrScanner() {
+		go startSonarrScanner()
 	}
 
 	log.Debug().Msg("Waiting for exit signal")

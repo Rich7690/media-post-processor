@@ -97,6 +97,40 @@ func ScanForMovies() error {
 	return nil
 }
 
+func ScanForTVShows() error {
+
+	series, err := web.GetAllSeries()
+
+	if err != nil {
+		return err
+	}
+
+	for i := 0; i < len(series); i++ {
+		log.Println("Scanning: " + series[i].Title)
+		episodeFiles, err := web.GetAllEpisodeFiles(series[i].ID)
+		if err != nil {
+			log.Println("Got error for series: "+series[i].Title+" -> ", err.Error())
+		}
+		for j := 0; j < len(episodeFiles); j++ {
+			file := episodeFiles[j]
+			ext := filepath.Ext(file.Path)
+
+			if ext != ".mp4" {
+				log.Println("Found episode file in wrong format: ", file.Path)
+				_, err := Enqueuer.EnqueueUnique(constants.TranscodeJobType, work.Q{
+					constants.TranscodeTypeKey: constants.TV,
+					constants.EpisodeFileIdKey: file.ID,
+				})
+				if err != nil {
+					log.Println("Error: ", err.Error())
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
 func (c *Webhook) UpdateTVShow(job *work.Job) error {
 
 	seriesId := job.ArgInt64(constants.SeriesIdKey)
