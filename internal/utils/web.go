@@ -23,6 +23,7 @@ func MakeWebRequest(method string, path string, body io.Reader) (*http.Response,
 	if err != nil {
 		return nil, nil, err
 	}
+
 	resp, err := netClient.Do(request)
 
 	if err != nil {
@@ -36,7 +37,7 @@ func MakeWebRequest(method string, path string, body io.Reader) (*http.Response,
 }
 
 func GetRequest(path string) (*http.Response, []byte, error) {
-	return MakeWebRequest("GET", path, nil)
+	return MakeWebRequest(http.MethodGet, path, nil)
 }
 
 func PostRequest(path string, body interface{}) (*http.Response, []byte, error) {
@@ -48,5 +49,5 @@ func PostRequest(path string, body interface{}) (*http.Response, []byte, error) 
 
 	buf := bytes.NewBuffer(value)
 
-	return MakeWebRequest("POST", path, buf)
+	return MakeWebRequest(http.MethodPost, path, buf)
 }
