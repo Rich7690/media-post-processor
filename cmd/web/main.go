@@ -5,11 +5,11 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"media-web/internal/config"
-	"media-web/internal/constants"
 	"media-web/internal/controllers"
 	"media-web/internal/worker"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 )
 
@@ -24,7 +24,8 @@ type writer struct {
 }
 
 func (w writer) Write(p []byte) (n int, err error) {
-	log.Debug().Msg(string(p))
+	line := string(p)
+	log.Debug().Msg(strings.TrimSuffix(line, "\n"))
 	return len(p), nil
 }
 
@@ -114,7 +115,7 @@ func startWebserver() {
 
 func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
-	if constants.IsLocal {
+	if config.EnablePrettyLog() {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout})
 	}
 
@@ -127,11 +128,11 @@ func main() {
 	}
 
 	if config.EnableRadarrScanner() {
-		go startRadarrScanner()
+		//go startRadarrScanner()
 	}
 
 	if config.EnableSonarrScanner() {
-		go startSonarrScanner()
+		//go startSonarrScanner()
 	}
 
 	log.Debug().Msg("Waiting for exit signal")

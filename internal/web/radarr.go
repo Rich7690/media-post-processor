@@ -1,36 +1,17 @@
 package web
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"log"
+	"github.com/rs/zerolog/log"
 	"media-web/internal/config"
-	"net/http"
-	"time"
+	"media-web/internal/utils"
 )
 
-var netClient = &http.Client{
-	Timeout: time.Second * 10,
-}
-
 func CheckRadarrCommand(id int) (*RadarrCommand, error) {
-	request, err := http.NewRequest("GET", fmt.Sprintf("%s/api/command/%d?apikey=%s", config.GetRadarBaseEndpoint(), id, config.GetRadarAPIKey()), nil)
 
-	if err != nil {
-		return nil, err
-	}
-	resp, err := netClient.Do(request)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
+	resp, body, err := utils.GetRequest(fmt.Sprintf("%s/api/command/%d?apikey=%s", config.GetRadarBaseEndpoint(), id, config.GetRadarAPIKey()))
 
 	if err != nil {
 		return nil, err
@@ -41,16 +22,14 @@ func CheckRadarrCommand(id int) (*RadarrCommand, error) {
 		err = json.Unmarshal(body, &response)
 
 		if err != nil {
-			log.Println("Got error parsing json: ", err.Error())
-			log.Println(string(body))
+			log.Err(err).Str("response", string(body)).Msg("Error parsing json")
 			return nil, err
 		}
 
 		return &response, nil
 
 	} else {
-		log.Println(resp.StatusCode)
-		log.Println(string(body))
+		log.Err(err).Int("status_code", resp.StatusCode).Str("response", string(body)).Msg("Error calling radarr")
 		return nil, errors.New("Failed to check command")
 	}
 }
@@ -62,60 +41,33 @@ func RescanMovie(id int64) (*RadarrCommand, error) {
 	payload["name"] = "RescanMovie"
 	payload["movieId"] = id
 
-	value, err := json.Marshal(payload)
+	resp, value, err := utils.PostRequest(fmt.Sprintf("%s/api/command/?apikey=%s", config.GetRadarBaseEndpoint(), config.GetRadarAPIKey()), payload)
 
 	if err != nil {
+		log.Error().Err(err).Msg("Error rescanning movie")
 		return nil, err
 	}
 
-	buf := bytes.NewBuffer(value)
+	if resp.StatusCode == 200 {
+		response := RadarrCommand{}
 
-	request, err := http.NewRequest("POST", fmt.Sprintf("%s/api/command/?apikey=%s", config.GetRadarBaseEndpoint(), config.GetRadarAPIKey()), buf)
+		err = json.Unmarshal(value, &response)
 
-	if err != nil {
-		return nil, err
-	}
-	resp, err := netClient.Do(request)
+		if err != nil {
+			return nil, err
+		}
 
-	if err != nil {
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-
-	value, err = ioutil.ReadAll(resp.Body)
-
-	if err != nil {
-		fmt.Println(value)
-		return nil, err
+		return &response, nil
+	} else {
+		log.Err(err).Int("status_code", resp.StatusCode).Str("response", string(value)).Msg("Error calling radarr")
+		return nil, errors.New("Bad response code")
 	}
 
-	response := RadarrCommand{}
-
-	err = json.Unmarshal(value, &response)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &response, nil
 }
 
 func LookupMovie(id int64) (*RadarrMovie, error) {
-	request, err := http.NewRequest("GET", fmt.Sprintf("%s/api/movie/%d?apikey=%s", config.GetRadarBaseEndpoint(), id, config.GetRadarAPIKey()), nil)
 
-	if err != nil {
-		return nil, err
-	}
-	resp, err := netClient.Do(request)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
+	resp, body, err := utils.GetRequest(fmt.Sprintf("%s/api/movie/%d?apikey=%s", config.GetRadarBaseEndpoint(), id, config.GetRadarAPIKey()))
 
 	if err != nil {
 		return nil, err
@@ -126,41 +78,25 @@ func LookupMovie(id int64) (*RadarrMovie, error) {
 	}
 
 	if resp.StatusCode == 200 {
-		log.Println("Found movie")
 		response := RadarrMovie{}
 		err = json.Unmarshal(body, &response)
 
 		if err != nil {
-			log.Println("Got error parsing json: ", err.Error())
-			log.Println(string(body))
+			log.Err(err).Str("response", string(body)).Msg("Error parsing json")
 			return nil, err
 		}
 
 		return &response, nil
 
 	} else {
-		log.Println(resp.StatusCode)
-		log.Println(string(body))
+		log.Err(err).Int("status_code", resp.StatusCode).Str("response", string(body)).Msg("Error calling radarr")
 		return nil, errors.New("Failed find movie")
 	}
 }
 
 func GetAllMovies() ([]RadarrMovie, error) {
 	response := make([]RadarrMovie, 1)
-	request, err := http.NewRequest("GET", fmt.Sprintf("%s/api/movie/?apikey=%s", config.GetRadarBaseEndpoint(), config.GetRadarAPIKey()), nil)
-
-	if err != nil {
-		return nil, err
-	}
-	resp, err := netClient.Do(request)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
+	resp, body, err := utils.GetRequest(fmt.Sprintf("%s/api/movie/?apikey=%s", config.GetRadarBaseEndpoint(), config.GetRadarAPIKey()))
 
 	if err != nil {
 		return nil, err
@@ -175,16 +111,14 @@ func GetAllMovies() ([]RadarrMovie, error) {
 		err = json.Unmarshal(body, &response)
 
 		if err != nil {
-			log.Println("Got error parsing json: ", err.Error())
-			log.Println(string(body))
+			log.Err(err).Str("response", string(body)).Msg("Error parsing json")
 			return nil, err
 		}
 
 		return response, nil
 
 	} else {
-		log.Println(resp.StatusCode)
-		log.Println(string(body))
+		log.Err(err).Int("status_code", resp.StatusCode).Str("response", string(body)).Msg("Error calling radarr")
 		return nil, errors.New("Failed to get movies")
 	}
 }

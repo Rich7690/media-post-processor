@@ -13,6 +13,11 @@ var ffmpegBin = os.Getenv("FFMPEG_PATH")
 var ffprobeBin = os.Getenv("FFPROBE_PATH")
 var enableRadarrScanner = os.Getenv("ENABLE_RADARR_SCANNER")
 var enableSonarrScanner = os.Getenv("ENABLE_SONARR_SCANNER")
+var prettyLog = os.Getenv("ENABLE_PRETTYLOG")
+
+func EnablePrettyLog() bool {
+	return prettyLog == "true"
+}
 
 func EnableSonarrScanner() bool {
 	return enableSonarrScanner == "true"

@@ -1,33 +1,18 @@
 package web
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"log"
+	"github.com/rs/zerolog/log"
 	"media-web/internal/config"
-	"net/http"
+	"media-web/internal/utils"
 )
 
 func GetAllEpisodeFiles(seriesId int) ([]SonarrEpisodeFile, error) {
 	response := make([]SonarrEpisodeFile, 1)
 	path := fmt.Sprintf("%s/api/episodeFile/?seriesId=%d&apikey=%s", config.GetSonarrBaseEndpoint(), seriesId, config.GetSonarrAPIKey())
-	request, err := http.NewRequest("GET", path, nil)
-
-	if err != nil {
-		return nil, err
-	}
-	resp, err := netClient.Do(request)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
+	resp, body, err := utils.GetRequest(path)
 
 	if err != nil {
 		return nil, err
@@ -42,36 +27,21 @@ func GetAllEpisodeFiles(seriesId int) ([]SonarrEpisodeFile, error) {
 		err = json.Unmarshal(body, &response)
 
 		if err != nil {
-			log.Println("Got error parsing json: ", err.Error())
-			log.Println(string(body))
+			log.Err(err).Str("response", string(body)).Msg("Error parsing json")
 			return nil, err
 		}
 
 		return response, nil
 
 	} else {
-		log.Println(resp.StatusCode)
-		log.Println(string(body))
+		log.Err(err).Int("status_code", resp.StatusCode).Str("response", string(body)).Msg("Error calling radarr")
 		return nil, errors.New("Failed to get episode files")
 	}
 }
 
 func GetAllSeries() ([]Series, error) {
 	response := make([]Series, 1)
-	request, err := http.NewRequest("GET", fmt.Sprintf("%s/api/series/?apikey=%s", config.GetSonarrBaseEndpoint(), config.GetSonarrAPIKey()), nil)
-
-	if err != nil {
-		return nil, err
-	}
-	resp, err := netClient.Do(request)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
+	resp, body, err := utils.GetRequest(fmt.Sprintf("%s/api/series/?apikey=%s", config.GetSonarrBaseEndpoint(), config.GetSonarrAPIKey()))
 
 	if err != nil {
 		return nil, err
@@ -86,35 +56,20 @@ func GetAllSeries() ([]Series, error) {
 		err = json.Unmarshal(body, &response)
 
 		if err != nil {
-			log.Println("Got error parsing json: ", err.Error())
-			log.Println(string(body))
+			log.Err(err).Str("response", string(body)).Msg("Error parsing json")
 			return nil, err
 		}
 
 		return response, nil
 
 	} else {
-		log.Println(resp.StatusCode)
-		log.Println(string(body))
+		log.Err(err).Int("status_code", resp.StatusCode).Str("response", string(body)).Msg("Error calling radarr")
 		return nil, errors.New("Failed to get series")
 	}
 }
 
 func CheckSonarrCommand(id int) (*SonarrCommand, error) {
-	request, err := http.NewRequest("GET", fmt.Sprintf("%s/api/command/%d?apikey=%s", config.GetSonarrBaseEndpoint(), id, config.GetSonarrAPIKey()), nil)
-
-	if err != nil {
-		return nil, err
-	}
-	resp, err := netClient.Do(request)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
+	resp, body, err := utils.GetRequest(fmt.Sprintf("%s/api/command/%d?apikey=%s", config.GetSonarrBaseEndpoint(), id, config.GetSonarrAPIKey()))
 
 	if err != nil {
 		return nil, err
@@ -125,16 +80,14 @@ func CheckSonarrCommand(id int) (*SonarrCommand, error) {
 		err = json.Unmarshal(body, &response)
 
 		if err != nil {
-			log.Println("Got error parsing json: ", err.Error())
-			log.Println(string(body))
+			log.Err(err).Str("response", string(body)).Msg("Error parsing json")
 			return nil, err
 		}
 
 		return &response, nil
 
 	} else {
-		log.Println(resp.StatusCode)
-		log.Println(string(body))
+		log.Err(err).Int("status_code", resp.StatusCode).Str("response", string(body)).Msg("Error calling radarr")
 		return nil, errors.New("Failed to check command")
 	}
 }
@@ -146,55 +99,31 @@ func RescanSeries(id int64) (*SonarrCommand, error) {
 	payload["name"] = "RescanSeries"
 	payload["seriesId"] = id
 
-	value, err := json.Marshal(payload)
-
-	buf := bytes.NewBuffer(value)
-
-	request, err := http.NewRequest("POST", fmt.Sprintf("%s/api/command/?apikey=%s", config.GetSonarrBaseEndpoint(), config.GetSonarrAPIKey()), buf)
-
-	if err != nil {
-		return nil, err
-	}
-	resp, err := netClient.Do(request)
+	resp, body, err := utils.PostRequest(fmt.Sprintf("%s/api/command/?apikey=%s", config.GetSonarrBaseEndpoint(), config.GetSonarrAPIKey()), payload)
 
 	if err != nil {
 		return nil, err
 	}
 
-	defer resp.Body.Close()
+	if resp.StatusCode == 200 {
+		response := SonarrCommand{}
 
-	value, err = ioutil.ReadAll(resp.Body)
+		err = json.Unmarshal(body, &response)
 
-	if err != nil {
-		return nil, err
+		if err != nil {
+			log.Err(err).Str("response", string(body)).Msg("Error parsing json")
+			return nil, err
+		}
+
+		return &response, nil
+	} else {
+		log.Err(err).Int("status_code", resp.StatusCode).Str("response", string(body)).Msg("Error calling radarr")
+		return nil, nil
 	}
-
-	response := SonarrCommand{}
-
-	err = json.Unmarshal(value, &response)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &response, nil
 }
 
 func LookupTVEpisode(id int64) (*SonarrEpisodeFile, error) {
-	request, err := http.NewRequest("GET", fmt.Sprintf("%s/api/episodeFile/%d?apikey=%s", config.GetSonarrBaseEndpoint(), id, config.GetSonarrAPIKey()), nil)
-
-	if err != nil {
-		return nil, err
-	}
-	resp, err := netClient.Do(request)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
+	resp, body, err := utils.GetRequest(fmt.Sprintf("%s/api/episodeFile/%d?apikey=%s", config.GetSonarrBaseEndpoint(), id, config.GetSonarrAPIKey()))
 
 	if err != nil {
 		return nil, err
@@ -205,21 +134,18 @@ func LookupTVEpisode(id int64) (*SonarrEpisodeFile, error) {
 	}
 
 	if resp.StatusCode == 200 {
-		log.Println("Found episode file")
 		response := SonarrEpisodeFile{}
 		err = json.Unmarshal(body, &response)
 
 		if err != nil {
-			log.Println("Got error parsing json: ", err.Error())
-			log.Println(string(body))
+			log.Err(err).Str("response", string(body)).Msg("Error parsing json")
 			return nil, err
 		}
 
 		return &response, nil
 
 	} else {
-		log.Println(resp.StatusCode)
-		log.Println(string(body))
+		log.Err(err).Int("status_code", resp.StatusCode).Str("response", string(body)).Msg("Error calling radarr")
 		return nil, errors.New("Failed find episode file")
 	}
 }

@@ -20,8 +20,7 @@ func TestHealthHandler(t *testing.T) {
 	helper.GetHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
 		statusOK := w.Code == http.StatusOK
 
-		p, err := ioutil.ReadAll(w.Body)
-		fmt.Println(string(p))
+		_, err := ioutil.ReadAll(w.Body)
 		pageOK := err == nil
 
 		return statusOK && pageOK

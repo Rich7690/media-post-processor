@@ -37,7 +37,7 @@ func GetRadarrWebhookHandler(scheduler worker.WorkScheduler) func(c *gin.Context
 				return
 			}
 
-			log.Printf("Enqueued job: %s", job.ID)
+			log.Info().Msgf("Enqueued job: %s", job.ID)
 			break
 		}
 
