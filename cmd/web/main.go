@@ -111,7 +111,7 @@ func startWebserver() {
 	r.GET("/health", controllers.HealthHandler)
 	r.POST("/api/radarr/webhook", controllers.GetRadarrWebhookHandler(worker.Enqueuer))
 	r.POST("/api/sonarr/webhook", controllers.GetSonarrWebhookHandler(worker.Enqueuer))
-	r.GET("/api/config", controllers.GetConfigHandler)
+	//r.GET("/api/config", controllers.GetConfigHandler)
 
 
 	err := r.Run()
