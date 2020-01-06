@@ -139,6 +139,7 @@ func (c *Webhook) UpdateTVShow(job *work.Job) error {
 
 	if err != nil {
 		log.Err(err).Msg("Error rescanning series")
+		return err
 	}
 
 	for count := 0; count < 5; count++ {

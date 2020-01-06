@@ -48,7 +48,7 @@ func RescanMovie(id int64) (*RadarrCommand, error) {
 		return nil, err
 	}
 
-	if resp.StatusCode == 200 {
+	if resp.StatusCode < 300 {
 		response := RadarrCommand{}
 
 		err = json.Unmarshal(value, &response)
@@ -77,7 +77,7 @@ func LookupMovie(id int64) (*RadarrMovie, error) {
 		return nil, nil
 	}
 
-	if resp.StatusCode == 200 {
+	if resp.StatusCode < 300 {
 		response := RadarrMovie{}
 		err = json.Unmarshal(body, &response)
 
@@ -106,7 +106,7 @@ func GetAllMovies() ([]RadarrMovie, error) {
 		return response, nil
 	}
 
-	if resp.StatusCode == 200 {
+	if resp.StatusCode < 300 {
 
 		err = json.Unmarshal(body, &response)
 

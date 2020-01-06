@@ -22,7 +22,7 @@ func GetAllEpisodeFiles(seriesId int) ([]SonarrEpisodeFile, error) {
 		return response, nil
 	}
 
-	if resp.StatusCode == 200 {
+	if resp.StatusCode < 300 {
 
 		err = json.Unmarshal(body, &response)
 
@@ -51,7 +51,7 @@ func GetAllSeries() ([]Series, error) {
 		return response, nil
 	}
 
-	if resp.StatusCode == 200 {
+	if resp.StatusCode < 300 {
 
 		err = json.Unmarshal(body, &response)
 
@@ -75,7 +75,7 @@ func CheckSonarrCommand(id int) (*SonarrCommand, error) {
 		return nil, err
 	}
 
-	if resp.StatusCode == 200 {
+	if resp.StatusCode < 300 {
 		response := SonarrCommand{}
 		err = json.Unmarshal(body, &response)
 
@@ -105,7 +105,7 @@ func RescanSeries(id int64) (*SonarrCommand, error) {
 		return nil, err
 	}
 
-	if resp.StatusCode == 200 {
+	if resp.StatusCode < 300 {
 		response := SonarrCommand{}
 
 		err = json.Unmarshal(body, &response)
@@ -133,7 +133,7 @@ func LookupTVEpisode(id int64) (*SonarrEpisodeFile, error) {
 		return nil, nil
 	}
 
-	if resp.StatusCode == 200 {
+	if resp.StatusCode < 300 {
 		response := SonarrEpisodeFile{}
 		err = json.Unmarshal(body, &response)
 
