@@ -125,7 +125,7 @@ func startMetricsServer() {
 	log.Debug().Msg("Starting metrics server")
 	server := http.NewServeMux()
 
-	server.Handle("/", promhttp.Handler())
+	server.Handle("/metrics", promhttp.Handler())
 	err := http.ListenAndServe(":9001", server)
 	log.Err(err).Msg("Failed to start metrics server")
 }
