@@ -14,6 +14,11 @@ var ffprobeBin = os.Getenv("FFPROBE_PATH")
 var enableRadarrScanner = os.Getenv("ENABLE_RADARR_SCANNER")
 var enableSonarrScanner = os.Getenv("ENABLE_SONARR_SCANNER")
 var prettyLog = os.Getenv("ENABLE_PRETTYLOG")
+var enableMetrics = os.Getenv("ENABLE_METRICS")
+
+func EnableMetrics() bool {
+	return enableMetrics == "true"
+}
 
 func EnablePrettyLog() bool {
 	return prettyLog == "true"
