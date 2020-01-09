@@ -1,16 +1,13 @@
 package main
 
 import (
-	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/zsais/go-gin-prometheus"
 	"media-web/internal/config"
 	"media-web/internal/controllers"
 	"media-web/internal/worker"
-	"net/http"
+	"github.com/gin-contrib/static"
 	"os"
 	"os/signal"
 	"strings"
@@ -105,29 +102,18 @@ func startWebserver() {
 	gin.DefaultWriter = writer{}
 	gin.DefaultErrorWriter = errorWriter{}
 	r := gin.Default()
+
 	r.Use(static.ServeRoot("/", "./public"))
-	p := ginprometheus.NewPrometheus("gin")
-	p.Use(r)
 	r.GET("/health", controllers.HealthHandler)
 	r.POST("/api/radarr/webhook", controllers.GetRadarrWebhookHandler(worker.Enqueuer))
 	r.POST("/api/sonarr/webhook", controllers.GetSonarrWebhookHandler(worker.Enqueuer))
 	//r.GET("/api/config", controllers.GetConfigHandler)
 
-
 	err := r.Run()
 
 	if err != nil {
-		log.Fatal().Err(err).Msg("Error starting web server")
+		panic(err)
 	}
-}
-
-func startMetricsServer() {
-	log.Debug().Msg("Starting metrics server")
-	server := http.NewServeMux()
-
-	server.Handle("/metrics", promhttp.Handler())
-	err := http.ListenAndServe(":9001", server)
-	log.Err(err).Msg("Failed to start metrics server")
 }
 
 func main() {
@@ -150,9 +136,6 @@ func main() {
 
 	if config.EnableSonarrScanner() {
 		go startSonarrScanner()
-	}
-	if config.EnableMetrics() {
-		go startMetricsServer()
 	}
 
 	log.Debug().Msg("Waiting for exit signal")

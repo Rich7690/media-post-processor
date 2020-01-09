@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gocraft/work"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog/log"
 	"github.com/xfrr/goffmpeg/ffmpeg"
 	"github.com/xfrr/goffmpeg/models"
@@ -30,32 +29,10 @@ type WorkScheduler struct {
 	EnqueueUnique func(jobName string, args map[string]interface{}) (*work.Job, error)
 }
 
-var jobsEnqueued = prometheus.NewCounter(
-	prometheus.CounterOpts{
-		Name: "jobs_enqueued",
-		Help: "Number of Jobs enqueued",
-	},
-)
-
-var jobsAttempted = prometheus.NewCounter(
-	prometheus.CounterOpts{
-		Name: "jobs_attempted",
-		Help: "Number of Jobs attempted",
-	},
-)
-
 var worker = work.NewEnqueuer(constants.JobQueueNamespace, &storage.RedisPool)
 
 var Enqueuer = WorkScheduler{
-	EnqueueUnique: func(jobName string, args map[string]interface{}) (job *work.Job, e error) {
-		jobsEnqueued.Inc()
-		return worker.EnqueueUnique(jobName, args)
-	},
-}
-
-func (c *Webhook) CountJobsPerformed(job *work.Job, next work.NextMiddlewareFunc) error {
-	jobsAttempted.Inc()
-	return next()
+	EnqueueUnique: worker.EnqueueUnique,
 }
 
 func (c *Webhook) Log(job *work.Job, next work.NextMiddlewareFunc) error {
@@ -396,7 +373,6 @@ func WorkerPool() {
 
 	// Add middleware that will be executed for each job
 	pool.Middleware((*Webhook).Log)
-	pool.Middleware((*Webhook).CountJobsPerformed)
 	//pool.Middleware((*Context).FindCustomer)
 
 	// Customize options:
