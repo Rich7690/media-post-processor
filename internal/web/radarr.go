@@ -7,22 +7,26 @@ import (
 	"github.com/rs/zerolog/log"
 	"media-web/internal/config"
 	"media-web/internal/utils"
+	"net/http"
 )
 
-func CheckRadarrCommand(id int) (*RadarrCommand, error) {
+type WebClient struct {
+	GetRequest func(path string) (*http.Response, []byte, error)
+}
 
-	resp, body, err := utils.GetRequest(fmt.Sprintf("%s/api/command/%d?apikey=%s", config.GetRadarBaseEndpoint(), id, config.GetRadarAPIKey()))
+func CheckRadarrCommandClient(client WebClient, id int) (*RadarrCommand, error) {
+	resp, body, err := client.GetRequest(fmt.Sprintf("%s/api/command/%d?apikey=%s", config.GetRadarBaseEndpoint(), id, config.GetRadarAPIKey()))
 
 	if err != nil {
 		return nil, err
 	}
 
-	if resp.StatusCode == 200 {
+	if resp.StatusCode < 300 {
 		response := RadarrCommand{}
 		err = json.Unmarshal(body, &response)
 
 		if err != nil {
-			log.Err(err).Str("response", string(body)).Msg("Error parsing json")
+			log.Err(err).Int("status_code", resp.StatusCode).Str("response", string(body)).Msg("Error parsing json")
 			return nil, err
 		}
 
@@ -32,6 +36,16 @@ func CheckRadarrCommand(id int) (*RadarrCommand, error) {
 		log.Err(err).Int("status_code", resp.StatusCode).Str("response", string(body)).Msg("Error calling radarr")
 		return nil, errors.New("Failed to check command")
 	}
+}
+
+func CheckRadarrCommand(id int) (*RadarrCommand, error) {
+
+	return CheckRadarrCommandClient(struct{
+		GetRequest func(path string) (*http.Response, []byte, error)
+	}{
+		GetRequest: utils.GetRequest,
+	}, id)
+
 }
 
 func RescanMovie(id int64) (*RadarrCommand, error) {
@@ -122,3 +136,19 @@ func GetAllMovies() ([]RadarrMovie, error) {
 		return nil, errors.New("Failed to get movies")
 	}
 }
+
+func GetMovieFilePath(id int64) (string, error) {
+
+	movie, err := LookupMovie(id)
+	if err != nil {
+		return "", err
+	}
+	if movie != nil {
+		return movie.Path + "/" + movie.MovieFile.RelativePath, nil
+	} else {
+		log.Warn().Msg("Could not find movie from remote service")
+	}
+
+	return "", nil
+}
+

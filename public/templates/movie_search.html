@@ -1,0 +1,20 @@
+<div>
+    <input ng-model="homeCtl.query" type="text" />
+    <button type="button" ng-click="homeCtl.submit()">Search</button>
+
+    <h3>Results</h3>
+
+    <table ng-if="homeCtl.result">
+        <tbody>
+        <tr ng-repeat="result in homeCtl.result.results">
+            <td style="min-height: 94px; min-width: 134px">
+                <img ng-if="result.poster_path" src="https://image.tmdb.org/t/p/w92/{{result.poster_path}}">
+            </td>
+            <td> {{result.title}} ({{result.release_date}})</td>
+            <td>{{result.overview}}</td>
+        </tr>
+        </tbody>
+    </table>
+
+
+</div>

@@ -1,6 +1,7 @@
 package storage
 
 import (
+	red "github.com/go-redis/redis/v7"
 	"github.com/gomodule/redigo/redis"
 	"media-web/internal/config"
 )
@@ -14,3 +15,10 @@ var RedisPool = redis.Pool{
 		return redis.Dial("tcp", config.GetRedisAddress())
 	},
 }
+
+var RedisClient = red.NewClient(&red.Options{
+	Addr:     config.GetRedisAddress(),
+	Password: "", // no password set
+	DB:       0,  // use default DB
+
+})

@@ -1,7 +1,6 @@
 package worker
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/gocraft/work"
 	"github.com/rs/zerolog/log"
@@ -16,9 +15,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"strconv"
 	"strings"
-	"time"
 )
 
 type Webhook struct {
@@ -29,7 +26,7 @@ type WorkScheduler struct {
 	EnqueueUnique func(jobName string, args map[string]interface{}) (*work.Job, error)
 }
 
-var worker = work.NewEnqueuer(constants.JobQueueNamespace, &storage.RedisPool)
+var worker = work.NewEnqueuer(config.JobQueueNamespace(), &storage.RedisPool)
 
 var Enqueuer = WorkScheduler{
 	EnqueueUnique: worker.EnqueueUnique,
@@ -38,158 +35,6 @@ var Enqueuer = WorkScheduler{
 func (c *Webhook) Log(job *work.Job, next work.NextMiddlewareFunc) error {
 	log.Info().Str("jobId", job.ID).Msg("Starting job: " + job.ID)
 	return next()
-}
-
-func getMovieFilePath(id int64) (string, error) {
-
-	movie, err := web.LookupMovie(id)
-	if err != nil {
-		return "", err
-	}
-	if movie != nil {
-		return movie.Path + "/" + movie.MovieFile.RelativePath, nil
-	} else {
-		log.Warn().Msg("Could not find movie from remote service")
-	}
-
-	return "", nil
-}
-
-func getEpisodeFilePath(id int64) (string, int, error) {
-	episodeFile, err := web.LookupTVEpisode(id)
-	if err != nil {
-		return "", -1, err
-	}
-	if episodeFile != nil {
-		return episodeFile.Path, episodeFile.SeriesID, nil
-	} else {
-		log.Warn().Msg("Could not find episodeFile")
-	}
-	return "", -1, nil
-}
-
-func ScanForMovies() error {
-
-	movies, err := web.GetAllMovies()
-
-	if err != nil {
-		return err
-	}
-
-	for i := 0; i < len(movies); i++ {
-		movie := movies[i]
-		if movie.Downloaded {
-			ext := filepath.Ext(movie.MovieFile.RelativePath)
-
-			if ext != ".mp4" {
-				log.Debug().Msg("Found movie in wrong format: " + movie.MovieFile.RelativePath)
-				_, err := Enqueuer.EnqueueUnique(constants.TranscodeJobType, work.Q{
-					constants.TranscodeTypeKey: constants.Movie,
-					constants.MovieIdKey:       movie.ID,
-				})
-				if err != nil {
-					log.Error().Err(err).Msg("Failed to enqueue movie transcode")
-				}
-			}
-		}
-	}
-
-	return nil
-}
-
-func ScanForTVShows() error {
-
-	series, err := web.GetAllSeries()
-
-	if err != nil {
-		return err
-	}
-
-	for i := 0; i < len(series); i++ {
-		log.Info().Msg("Scanning: " + series[i].Title)
-		episodeFiles, err := web.GetAllEpisodeFiles(series[i].ID)
-		if err != nil {
-			log.Error().Err(err).Msg("Got error for series: " + series[i].Title)
-		}
-		for j := 0; j < len(episodeFiles); j++ {
-			file := episodeFiles[j]
-			ext := filepath.Ext(file.Path)
-
-			if ext != ".mp4" {
-				log.Info().Msg("Found episode file in wrong format: " + file.Path)
-				_, err := Enqueuer.EnqueueUnique(constants.TranscodeJobType, work.Q{
-					constants.TranscodeTypeKey: constants.TV,
-					constants.EpisodeFileIdKey: file.ID,
-				})
-				if err != nil {
-					log.Error().Err(err).Msg("Error enqueueing tv transcode")
-				}
-			}
-		}
-	}
-
-	return nil
-}
-
-func (c *Webhook) UpdateTVShow(job *work.Job) error {
-
-	seriesId := job.ArgInt64(constants.SeriesIdKey)
-
-	cmd, err := web.RescanSeries(seriesId)
-
-	if err != nil {
-		log.Err(err).Msg("Error rescanning series")
-		return err
-	}
-
-	for count := 0; count < 5; count++ {
-		result, err := web.CheckSonarrCommand(cmd.ID)
-
-		if err == nil {
-			if strings.Index(result.State, "complete") != -1 {
-				log.Info().Msg("Rescan complete for: " + strconv.Itoa(cmd.ID))
-				return nil
-			} else {
-				log.Info().Msg("Rescan not complete yet for: " + strconv.Itoa(cmd.ID))
-			}
-		} else {
-			log.Err(err).Msg("Error checking state of command: " + strconv.Itoa(cmd.ID))
-		}
-
-		time.Sleep(time.Second * 15)
-	}
-
-	return err
-}
-
-func (c *Webhook) UpdateMovie(job *work.Job) error {
-	movieId := job.ArgInt64(constants.MovieIdKey)
-
-	cmd, err := web.RescanMovie(movieId)
-
-	if err != nil {
-		log.Err(err).Msg("Error rescanning movie: " + strconv.Itoa(int(movieId)))
-		return err
-	}
-
-	for count := 0; count < 5; count++ {
-		result, err := web.CheckRadarrCommand(cmd.ID)
-
-		if err == nil {
-			if strings.Index(result.State, "complete") != -1 {
-				log.Info().Msg("Rescan complete for: " + strconv.Itoa(cmd.ID))
-				return nil
-			} else {
-				log.Info().Msg("Rescan not complete yet for: " + strconv.Itoa(cmd.ID))
-			}
-		} else {
-			log.Err(err).Msg("Error checking status of command")
-		}
-
-		time.Sleep(time.Second * 15)
-	}
-
-	return nil
 }
 
 type Transcoder struct {
@@ -221,7 +66,7 @@ func GetTranscoder() Transcoder {
 	}
 }
 
-func doTranscode(trans Transcoder, job *work.Job) error {
+func DoTranscode(trans Transcoder, job *work.Job) error {
 	transcodeType := constants.TranscodeType(job.ArgString(constants.TranscodeTypeKey))
 
 	var inputFilePath = ""
@@ -231,10 +76,10 @@ func doTranscode(trans Transcoder, job *work.Job) error {
 	switch transcodeType {
 	case constants.TV:
 		id = job.ArgInt64(constants.EpisodeFileIdKey)
-		inputFilePath, seriesId, err = getEpisodeFilePath(id)
+		inputFilePath, seriesId, err = web.GetEpisodeFilePath(id)
 	case constants.Movie:
 		id = job.ArgInt64(constants.MovieIdKey)
-		inputFilePath, err = getMovieFilePath(id)
+		inputFilePath, err = web.GetMovieFilePath(id)
 	default:
 		log.Warn().Msg("Unknown transcodeType: " + string(transcodeType))
 		return nil
@@ -244,6 +89,8 @@ func doTranscode(trans Transcoder, job *work.Job) error {
 		log.Error().Err(err).Msg("Error getting input file path")
 		return err
 	}
+
+	inputFilePath = "/storage/Media/Movies/222 (2017)/222 2017.mkv"
 
 	if inputFilePath != "" {
 		log.Info().Msg("Working on transcode at path: " + inputFilePath)
@@ -289,14 +136,6 @@ func doTranscode(trans Transcoder, job *work.Job) error {
 	trans.MediaFile().SetVideoCodec("libx264")
 	trans.MediaFile().SetQuality(23)
 	trans.MediaFile().SetTune("film")
-
-	bytes, err := json.Marshal(trans.MediaFile())
-
-	if err == nil {
-		log.Debug().Msg("Json: " + string(bytes))
-	} else {
-		log.Error().Err(err).Msg("Failed to marshal media file")
-	}
 
 	log.Debug().Msg("Running ffmpeg command: \"" + strings.Join(trans.MediaFile().ToStrCommand(), " ") + "\"")
 
@@ -359,23 +198,14 @@ func doTranscode(trans Transcoder, job *work.Job) error {
 func (c *Webhook) TranscodeJobHandler(job *work.Job) error {
 	// Create new instance of transcoder
 	trans := GetTranscoder()
-	return doTranscode(trans, job)
+	return DoTranscode(trans, job)
 }
 
 func WorkerPool() {
 	log.Info().Msg("Starting worker pool")
-	// Make a new pool. Arguments:
-	// Context{} is a struct that will be the context for the request.
-	// 10 is the max concurrency
-	// "my_app_namespace" is the Redis namespace
-	// redisPool is a Redis pool
-	pool := work.NewWorkerPool(Webhook{}, 20, constants.JobQueueNamespace, &storage.RedisPool)
-
-	// Add middleware that will be executed for each job
+	pool := work.NewWorkerPool(Webhook{}, 20, config.JobQueueNamespace(), &storage.RedisPool)
 	pool.Middleware((*Webhook).Log)
-	//pool.Middleware((*Context).FindCustomer)
 
-	// Customize options:
 	pool.JobWithOptions(constants.TranscodeJobType, work.JobOptions{
 		Priority:       1,
 		MaxFails:       3,
@@ -383,14 +213,14 @@ func WorkerPool() {
 		MaxConcurrency: 1,
 	}, (*Webhook).TranscodeJobHandler)
 
-	pool.JobWithOptions("update-sonarr", work.JobOptions{
+	pool.JobWithOptions(constants.UpdateSonarrJobName, work.JobOptions{
 		Priority:       2,
 		MaxFails:       5,
 		SkipDead:       false,
 		MaxConcurrency: 5,
 	}, (*Webhook).UpdateTVShow)
 
-	pool.JobWithOptions("update-radarr", work.JobOptions{
+	pool.JobWithOptions(constants.UpdateRadarrJobName, work.JobOptions{
 		Priority:       2,
 		MaxFails:       5,
 		SkipDead:       false,
@@ -408,5 +238,4 @@ func WorkerPool() {
 	// Stop the pool
 	pool.Stop()
 	log.Info().Msg("Worker pool stopped")
-	os.Exit(0)
 }

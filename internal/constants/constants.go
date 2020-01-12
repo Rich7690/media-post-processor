@@ -8,7 +8,8 @@ var IsTest = os.Getenv("IS_TEST") == "true"
 const SeriesIdKey = "seriesId"
 const MovieIdKey = "movieId"
 const TranscodeJobType = "transcode-job"
-const JobQueueNamespace = "media-web"
+const UpdateRadarrJobName = "update-radarr"
+const UpdateSonarrJobName = "update-sonarr"
 const EpisodeFileIdKey = "episodeFileId"
 const TranscodeTypeKey = "transcodeType"
 
@@ -17,4 +18,13 @@ type TranscodeType string
 const (
 	TV    TranscodeType = "TV"
 	Movie               = "Movie"
+)
+
+type JobStatus string
+
+const (
+	Created    JobStatus = "Created"
+	InProgress           = "InProgress"
+	Completed            = "Completed"
+	Failed               = "Failed"
 )

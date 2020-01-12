@@ -149,3 +149,17 @@ func LookupTVEpisode(id int64) (*SonarrEpisodeFile, error) {
 		return nil, errors.New("Failed find episode file")
 	}
 }
+
+func GetEpisodeFilePath(id int64) (string, int, error) {
+	episodeFile, err := LookupTVEpisode(id)
+	if err != nil {
+		return "", -1, err
+	}
+	if episodeFile != nil {
+		return episodeFile.Path, episodeFile.SeriesID, nil
+	} else {
+		log.Warn().Msg("Could not find episodeFile")
+	}
+	return "", -1, nil
+}
+

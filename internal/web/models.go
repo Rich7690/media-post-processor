@@ -213,62 +213,64 @@ type RadarrMovie struct {
 		Votes int     `json:"votes"`
 		Value float64 `json:"value"`
 	} `json:"ratings"`
-	MovieFile struct {
-		MovieID      int       `json:"movieId"`
-		RelativePath string    `json:"relativePath"`
-		Size         int64     `json:"size"`
-		DateAdded    time.Time `json:"dateAdded"`
-		SceneName    string    `json:"sceneName"`
-		ReleaseGroup string    `json:"releaseGroup"`
-		Quality      struct {
-			Quality struct {
-				ID         int    `json:"id"`
-				Name       string `json:"name"`
-				Source     string `json:"source"`
-				Resolution string `json:"resolution"`
-				Modifier   string `json:"modifier"`
-			} `json:"quality"`
-			CustomFormats []interface{} `json:"customFormats"`
-			Revision      struct {
-				Version int `json:"version"`
-				Real    int `json:"real"`
-			} `json:"revision"`
-		} `json:"quality"`
-		Edition   string `json:"edition"`
-		MediaInfo struct {
-			ContainerFormat              string  `json:"containerFormat"`
-			VideoFormat                  string  `json:"videoFormat"`
-			VideoCodecID                 string  `json:"videoCodecID"`
-			VideoProfile                 string  `json:"videoProfile"`
-			VideoCodecLibrary            string  `json:"videoCodecLibrary"`
-			VideoBitrate                 int     `json:"videoBitrate"`
-			VideoBitDepth                int     `json:"videoBitDepth"`
-			VideoMultiViewCount          int     `json:"videoMultiViewCount"`
-			VideoColourPrimaries         string  `json:"videoColourPrimaries"`
-			VideoTransferCharacteristics string  `json:"videoTransferCharacteristics"`
-			Width                        int     `json:"width"`
-			Height                       int     `json:"height"`
-			AudioFormat                  string  `json:"audioFormat"`
-			AudioCodecID                 string  `json:"audioCodecID"`
-			AudioCodecLibrary            string  `json:"audioCodecLibrary"`
-			AudioAdditionalFeatures      string  `json:"audioAdditionalFeatures"`
-			AudioBitrate                 int     `json:"audioBitrate"`
-			RunTime                      string  `json:"runTime"`
-			AudioStreamCount             int     `json:"audioStreamCount"`
-			AudioChannels                int     `json:"audioChannels"`
-			AudioChannelPositions        string  `json:"audioChannelPositions"`
-			AudioChannelPositionsText    string  `json:"audioChannelPositionsText"`
-			AudioProfile                 string  `json:"audioProfile"`
-			VideoFps                     float64 `json:"videoFps"`
-			AudioLanguages               string  `json:"audioLanguages"`
-			Subtitles                    string  `json:"subtitles"`
-			ScanType                     string  `json:"scanType"`
-			SchemaRevision               int     `json:"schemaRevision"`
-		} `json:"mediaInfo"`
-		ID int `json:"id"`
-	} `json:"movieFile"`
+	MovieFile MovieFile `json:"movieFile"`
 	QualityProfileID int `json:"qualityProfileId"`
 	ID               int `json:"id"`
+}
+
+type MovieFile struct {
+	MovieID      int       `json:"movieId"`
+	RelativePath string    `json:"relativePath"`
+	Size         int64     `json:"size"`
+	DateAdded    time.Time `json:"dateAdded"`
+	SceneName    string    `json:"sceneName"`
+	ReleaseGroup string    `json:"releaseGroup"`
+	Quality      struct {
+		Quality struct {
+			ID         int    `json:"id"`
+			Name       string `json:"name"`
+			Source     string `json:"source"`
+			Resolution string `json:"resolution"`
+			Modifier   string `json:"modifier"`
+		} `json:"quality"`
+		CustomFormats []interface{} `json:"customFormats"`
+		Revision      struct {
+			Version int `json:"version"`
+			Real    int `json:"real"`
+		} `json:"revision"`
+	} `json:"quality"`
+	Edition   string `json:"edition"`
+	MediaInfo struct {
+		ContainerFormat              string  `json:"containerFormat"`
+		VideoFormat                  string  `json:"videoFormat"`
+		VideoCodecID                 string  `json:"videoCodecID"`
+		VideoProfile                 string  `json:"videoProfile"`
+		VideoCodecLibrary            string  `json:"videoCodecLibrary"`
+		VideoBitrate                 int     `json:"videoBitrate"`
+		VideoBitDepth                int     `json:"videoBitDepth"`
+		VideoMultiViewCount          int     `json:"videoMultiViewCount"`
+		VideoColourPrimaries         string  `json:"videoColourPrimaries"`
+		VideoTransferCharacteristics string  `json:"videoTransferCharacteristics"`
+		Width                        int     `json:"width"`
+		Height                       int     `json:"height"`
+		AudioFormat                  string  `json:"audioFormat"`
+		AudioCodecID                 string  `json:"audioCodecID"`
+		AudioCodecLibrary            string  `json:"audioCodecLibrary"`
+		AudioAdditionalFeatures      string  `json:"audioAdditionalFeatures"`
+		AudioBitrate                 int     `json:"audioBitrate"`
+		RunTime                      string  `json:"runTime"`
+		AudioStreamCount             int     `json:"audioStreamCount"`
+		AudioChannels                int     `json:"audioChannels"`
+		AudioChannelPositions        string  `json:"audioChannelPositions"`
+		AudioChannelPositionsText    string  `json:"audioChannelPositionsText"`
+		AudioProfile                 string  `json:"audioProfile"`
+		VideoFps                     float64 `json:"videoFps"`
+		AudioLanguages               string  `json:"audioLanguages"`
+		Subtitles                    string  `json:"subtitles"`
+		ScanType                     string  `json:"scanType"`
+		SchemaRevision               int     `json:"schemaRevision"`
+	} `json:"mediaInfo"`
+	ID int `json:"id"`
 }
 
 type SonarrEpisodeFile struct {
@@ -297,4 +299,32 @@ type SonarrEpisodeFile struct {
 	} `json:"mediaInfo"`
 	QualityCutoffNotMet bool `json:"qualityCutoffNotMet"`
 	ID                  int  `json:"id"`
+}
+
+type MovieSearchResults struct {
+	Page         int       `json:"page"`
+	TotalResults int       `json:"total_results"`
+	TotalPages   int       `json:"total_pages"`
+	Results      []MovieSearchResult `json:"results"`
+}
+
+type MovieSearchResult struct {
+	Popularity       float64 `json:"popularity"`
+	VoteCount        int     `json:"vote_count"`
+	Video            bool    `json:"video"`
+	PosterPath       string  `json:"poster_path"`
+	ID               int     `json:"id"`
+	Adult            bool    `json:"adult"`
+	BackdropPath     string  `json:"backdrop_path"`
+	OriginalLanguage string  `json:"original_language"`
+	OriginalTitle    string  `json:"original_title"`
+	GenreIds         []int   `json:"genre_ids"`
+	Title            string  `json:"title"`
+	VoteAverage      float64 `json:"vote_average"`
+	Overview         string  `json:"overview"`
+	ReleaseDate      string  `json:"release_date"`
+}
+
+type MovieSearchQuery struct {
+	Query string `json:"query"`
 }

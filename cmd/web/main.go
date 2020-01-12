@@ -1,13 +1,14 @@
 package main
 
 import (
+	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"media-web/internal/config"
 	"media-web/internal/controllers"
+	"media-web/internal/storage"
 	"media-web/internal/worker"
-	"github.com/gin-contrib/static"
 	"os"
 	"os/signal"
 	"strings"
@@ -60,7 +61,8 @@ func startSonarrScanner() {
 			return
 		case <-repeat:
 			log.Info().Msg("Scanning for TV in wrong format")
-			err := worker.ScanForTVShows()
+			err := worker.ScanForTVShows(worker.TVScannerImpl, worker.Enqueuer)
+
 			log.Info().Msg("Done scanning for TV shows")
 			if err != nil {
 				log.Err(err).Msg("Error scanning for TV shows")
@@ -87,7 +89,7 @@ func startRadarrScanner() {
 			return
 		case <-repeat:
 			log.Info().Msg("Scanning for movies in wrong format")
-			err := worker.ScanForMovies()
+			err := worker.ScanForMovies(worker.MovieScannerImpl, worker.Enqueuer)
 			log.Info().Msg("Done scanning for movies")
 			if err != nil {
 				log.Err(err).Msg("Error scanning for movies")
@@ -107,20 +109,24 @@ func startWebserver() {
 	r.GET("/health", controllers.HealthHandler)
 	r.POST("/api/radarr/webhook", controllers.GetRadarrWebhookHandler(worker.Enqueuer))
 	r.POST("/api/sonarr/webhook", controllers.GetSonarrWebhookHandler(worker.Enqueuer))
-	//r.GET("/api/config", controllers.GetConfigHandler)
+	r.GET("/api/movie/search", controllers.GetMoveSearchHandler())
+	r.GET("/api/config", controllers.GetConfigHandler)
 
 	err := r.Run()
 
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Msg("Failed to start web server")
 	}
 }
 
 func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
+	log.Logger = log.Level(zerolog.DebugLevel)
 	if config.EnablePrettyLog() {
-		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout})
+		log.Logger = log.Level(zerolog.DebugLevel).Output(zerolog.ConsoleWriter{Out: os.Stdout})
 	}
+
+	storage.MigrateDB()
 
 	if config.EnableWeb() {
 		go startWebserver()

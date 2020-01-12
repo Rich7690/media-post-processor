@@ -36,7 +36,7 @@ func GetSonarrWebhookHandler(scheduler worker.WorkScheduler) func(c *gin.Context
 				return
 			}
 
-			log.Info().Msg("Enqueued job: " + job.ID)
+			log.Info().Msgf("Enqueued job: %s", job.ID)
 			break
 		}
 
