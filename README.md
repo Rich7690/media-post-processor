@@ -1,4 +1,6 @@
 # Media Post Processor
+[![Coverage Status](https://coveralls.io/repos/github/Rich7690/media-post-processor/badge.svg?branch=master)](https://coveralls.io/github/Rich7690/media-post-processor?branch=master) 
+[![HitCount](http://hits.dwyl.com/rich7690/media-post-processor}.svg)](http://hits.dwyl.com/rich7690/media-post-processor)
 
 ## Summary
 
