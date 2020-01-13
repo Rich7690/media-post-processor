@@ -27,4 +27,4 @@ jobs:
         COVERALLS_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
       run: |
         GO111MODULE=off go get github.com/mattn/goveralls
-        $(go env GOPATH)/bin/goveralls -coverprofile=profile.cov -service=github
+        $(go env GOPATH)/bin/goveralls -coverprofile=profile.cov -service=github -repotoken $COVERALLS_TOKEN
