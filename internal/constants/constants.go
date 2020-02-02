@@ -19,12 +19,3 @@ const (
 	TV    TranscodeType = "TV"
 	Movie               = "Movie"
 )
-
-type JobStatus string
-
-const (
-	Created    JobStatus = "Created"
-	InProgress           = "InProgress"
-	Completed            = "Completed"
-	Failed               = "Failed"
-)

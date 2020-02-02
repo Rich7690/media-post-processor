@@ -18,7 +18,7 @@ angular.module('mediaweb', ['ngRoute'])
         $scope.$routeParams = $routeParams;
 
         var configCtl = this;
-        $scope.configCtl = configCtl
+        $scope.configCtl = configCtl;
         configCtl.config = {};
         configCtl.loaded = false;
         $http.get('api/config').then(function (response) {

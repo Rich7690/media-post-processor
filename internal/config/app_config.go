@@ -17,14 +17,6 @@ var enableRadarrScanner = os.Getenv("ENABLE_RADARR_SCANNER")
 var enableSonarrScanner = os.Getenv("ENABLE_SONARR_SCANNER")
 var prettyLog = os.Getenv("ENABLE_PRETTYLOG")
 var jobQueueNamespace = os.Getenv("JOB_QUEUE_NAMESPACE")
-var theMovieDBAPIKey = os.Getenv("THE_MOVIE_DB_API_KEY")
-
-func GetMovieDBAPIKey() string {
-	if theMovieDBAPIKey != "" {
-		return theMovieDBAPIKey
-	}
-	return "1a7373301961d03f97f853a876dd1212"
-}
 
 func JobQueueNamespace() string {
 	if jobQueueNamespace != "" {

@@ -7,7 +7,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"media-web/internal/config"
 	"media-web/internal/controllers"
-	"media-web/internal/storage"
 	"media-web/internal/worker"
 	"os"
 	"os/signal"
@@ -46,8 +45,6 @@ func startWorker() {
 
 func startSonarrScanner() {
 	log.Info().Msg("Starting Sonarr scanner")
-	exitChan := make(chan os.Signal, 1)
-	signal.Notify(exitChan, os.Interrupt, os.Kill)
 	repeat := make(chan bool, 1)
 	repeat <- true // queue up first one to kick it off on start
 	for {
@@ -57,8 +54,6 @@ func startSonarrScanner() {
 		}()
 
 		select {
-		case <-exitChan:
-			return
 		case <-repeat:
 			log.Info().Msg("Scanning for TV in wrong format")
 			err := worker.ScanForTVShows(worker.TVScannerImpl, worker.Enqueuer)
@@ -74,8 +69,6 @@ func startSonarrScanner() {
 
 func startRadarrScanner() {
 	log.Info().Msg("Starting Radarr scanner")
-	exitChan := make(chan os.Signal, 1)
-	signal.Notify(exitChan, os.Interrupt, os.Kill)
 	repeat := make(chan bool, 1)
 	repeat <- true // queue up first one to kick it off on start
 	for {
@@ -85,8 +78,6 @@ func startRadarrScanner() {
 		}()
 
 		select {
-		case <-exitChan:
-			return
 		case <-repeat:
 			log.Info().Msg("Scanning for movies in wrong format")
 			err := worker.ScanForMovies(worker.MovieScannerImpl, worker.Enqueuer)
@@ -109,7 +100,6 @@ func startWebserver() {
 	r.GET("/health", controllers.HealthHandler)
 	r.POST("/api/radarr/webhook", controllers.GetRadarrWebhookHandler(worker.Enqueuer))
 	r.POST("/api/sonarr/webhook", controllers.GetSonarrWebhookHandler(worker.Enqueuer))
-	r.GET("/api/movie/search", controllers.GetMoveSearchHandler())
 	r.GET("/api/config", controllers.GetConfigHandler)
 
 	err := r.Run()
@@ -121,12 +111,11 @@ func startWebserver() {
 
 func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
-	log.Logger = log.Level(zerolog.DebugLevel)
+	log.Logger = log.Level(zerolog.DebugLevel).With().Timestamp().Logger()
+
 	if config.EnablePrettyLog() {
 		log.Logger = log.Level(zerolog.DebugLevel).Output(zerolog.ConsoleWriter{Out: os.Stdout})
 	}
-
-	storage.MigrateDB()
 
 	if config.EnableWeb() {
 		go startWebserver()
