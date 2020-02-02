@@ -90,8 +90,6 @@ func DoTranscode(trans Transcoder, job *work.Job) error {
 		return err
 	}
 
-	inputFilePath = "/storage/Media/Movies/222 (2017)/222 2017.mkv"
-
 	if inputFilePath != "" {
 		log.Info().Msg("Working on transcode at path: " + inputFilePath)
 	} else {
