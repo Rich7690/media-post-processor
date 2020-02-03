@@ -30,4 +30,6 @@ RUN apk add ffmpeg tini
 VOLUME /config
 EXPOSE 8080
 ENV GIN_MODE=release
+HEALTHCHECK --interval=5s --timeout=5s --retries=3 CMD wget localhost:8080/health -q -O - > /dev/null 2>&1
+
 CMD ["/sbin/tini","--","./main"]

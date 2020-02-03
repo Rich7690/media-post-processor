@@ -8,22 +8,17 @@ import (
 	"path/filepath"
 )
 
-type TVScanner struct {
-	GetAllSeries func() ([]web.Series, error)
-	GetAllEpisodeFiles func(seriesId int) ([]web.SonarrEpisodeFile, error)
-}
+func ScanForTVShows(sonarrClient web.SonarrClient, scheduler WorkScheduler) {
 
-func ScanForTVShows(scanner TVScanner, scheduler WorkScheduler) error {
-
-	series, err := scanner.GetAllSeries()
+	series, err := sonarrClient.GetAllSeries()
 
 	if err != nil {
-		return err
+		return
 	}
 
 	for i := 0; i < len(series); i++ {
 		log.Info().Msg("Scanning: " + series[i].Title)
-		episodeFiles, err := scanner.GetAllEpisodeFiles(series[i].ID)
+		episodeFiles, err := sonarrClient.GetAllEpisodeFiles(series[i].ID)
 		if err != nil {
 			log.Error().Err(err).Msg("Got error for series: " + series[i].Title)
 		}
@@ -43,7 +38,5 @@ func ScanForTVShows(scanner TVScanner, scheduler WorkScheduler) error {
 			}
 		}
 	}
-
-	return nil
 }
 

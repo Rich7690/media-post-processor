@@ -1,9 +1,9 @@
 package storage
 
 import (
-	red "github.com/go-redis/redis/v7"
 	"github.com/gomodule/redigo/redis"
 	"media-web/internal/config"
+	"time"
 )
 
 // Make a redis pool
@@ -12,13 +12,7 @@ var RedisPool = redis.Pool{
 	MaxIdle:   10,
 	Wait:      true,
 	Dial: func() (redis.Conn, error) {
-		return redis.Dial("tcp", config.GetRedisAddress())
+		return redis.DialURL(config.GetConfig().RedisAddress.String(), redis.DialKeepAlive(5 * time.Minute),
+			redis.DialReadTimeout(5 * time.Second), redis.DialConnectTimeout(5 * time.Second))
 	},
 }
-
-var RedisClient = red.NewClient(&red.Options{
-	Addr:     config.GetRedisAddress(),
-	Password: "", // no password set
-	DB:       0,  // use default DB
-
-})

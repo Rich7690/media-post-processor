@@ -7,12 +7,35 @@ import (
 	"github.com/rs/zerolog/log"
 	"media-web/internal/config"
 	"media-web/internal/utils"
+	"net/http"
+	"net/url"
+	"strconv"
 )
 
-func GetAllEpisodeFiles(seriesId int) ([]SonarrEpisodeFile, error) {
+type SonarrClient interface {
+	GetAllEpisodeFiles(seriesId int) ([]SonarrEpisodeFile, error)
+	GetAllSeries() ([]Series, error)
+	CheckSonarrCommand(id int) (*SonarrCommand, error)
+	RescanSeries(id int64) (*SonarrCommand, error)
+	LookupTVEpisode(id int64) (*SonarrEpisodeFile, error)
+	GetEpisodeFilePath(id int64) (string, int, error)
+}
+
+type SonarrClientImpl struct {
+	webClient utils.WebClient
+}
+
+func GetSonarrClient() SonarrClient {
+	return SonarrClientImpl{
+		webClient:utils.GetWebClient(),
+	}
+}
+
+func (c SonarrClientImpl) GetAllEpisodeFiles(seriesId int) ([]SonarrEpisodeFile, error) {
 	response := make([]SonarrEpisodeFile, 1)
-	path := fmt.Sprintf("%s/api/episodeFile/?seriesId=%d&apikey=%s", config.GetSonarrBaseEndpoint(), seriesId, config.GetSonarrAPIKey())
-	resp, body, err := utils.GetRequest(path)
+	vals := url.Values{}
+	vals.Add("seriesId", strconv.Itoa(seriesId))
+	resp, body, err := sonarrGetRequest(c.webClient, "/api/episodeFile", vals)
 
 	if err != nil {
 		return nil, err
@@ -39,9 +62,19 @@ func GetAllEpisodeFiles(seriesId int) ([]SonarrEpisodeFile, error) {
 	}
 }
 
-func GetAllSeries() ([]Series, error) {
+func sonarrGetRequest(client utils.WebClient, path string, query url.Values) (*http.Response, []byte, error) {
+	query.Add("apikey", config.GetConfig().SonarrApiKey)
+	return client.MakeGetRequest(*config.GetConfig().SonarrBaseEndpoint, path, query)
+}
+
+func sonarrPostRequest(client utils.WebClient, path string, query url.Values, body interface{}) (*http.Response, []byte, error) {
+	query.Add("apikey", config.GetConfig().SonarrApiKey)
+	return client.MakePostRequest(*config.GetConfig().SonarrBaseEndpoint, path, query, body)
+}
+
+func (c SonarrClientImpl) GetAllSeries() ([]Series, error) {
 	response := make([]Series, 1)
-	resp, body, err := utils.GetRequest(fmt.Sprintf("%s/api/series/?apikey=%s", config.GetSonarrBaseEndpoint(), config.GetSonarrAPIKey()))
+	resp, body, err := sonarrGetRequest(c.webClient, "/api/series/", url.Values{})
 
 	if err != nil {
 		return nil, err
@@ -68,8 +101,8 @@ func GetAllSeries() ([]Series, error) {
 	}
 }
 
-func CheckSonarrCommand(id int) (*SonarrCommand, error) {
-	resp, body, err := utils.GetRequest(fmt.Sprintf("%s/api/command/%d?apikey=%s", config.GetSonarrBaseEndpoint(), id, config.GetSonarrAPIKey()))
+func (c SonarrClientImpl) CheckSonarrCommand(id int) (*SonarrCommand, error) {
+	resp, body, err := sonarrGetRequest(c.webClient, fmt.Sprintf("/api/command/%d", id), url.Values{})
 
 	if err != nil {
 		return nil, err
@@ -92,14 +125,14 @@ func CheckSonarrCommand(id int) (*SonarrCommand, error) {
 	}
 }
 
-func RescanSeries(id int64) (*SonarrCommand, error) {
+func (c SonarrClientImpl) RescanSeries(id int64) (*SonarrCommand, error) {
 
 	payload := make(map[string]interface{})
 
 	payload["name"] = "RescanSeries"
 	payload["seriesId"] = id
 
-	resp, body, err := utils.PostRequest(fmt.Sprintf("%s/api/command/?apikey=%s", config.GetSonarrBaseEndpoint(), config.GetSonarrAPIKey()), payload)
+	resp, body, err := sonarrPostRequest(c.webClient, "/api/command", url.Values{}, payload)
 
 	if err != nil {
 		return nil, err
@@ -122,8 +155,8 @@ func RescanSeries(id int64) (*SonarrCommand, error) {
 	}
 }
 
-func LookupTVEpisode(id int64) (*SonarrEpisodeFile, error) {
-	resp, body, err := utils.GetRequest(fmt.Sprintf("%s/api/episodeFile/%d?apikey=%s", config.GetSonarrBaseEndpoint(), id, config.GetSonarrAPIKey()))
+func (c SonarrClientImpl) LookupTVEpisode(id int64) (*SonarrEpisodeFile, error) {
+	resp, body, err := sonarrGetRequest(c.webClient, fmt.Sprintf("/api/episodeFile/%d", id), url.Values{})
 
 	if err != nil {
 		return nil, err
@@ -150,8 +183,8 @@ func LookupTVEpisode(id int64) (*SonarrEpisodeFile, error) {
 	}
 }
 
-func GetEpisodeFilePath(id int64) (string, int, error) {
-	episodeFile, err := LookupTVEpisode(id)
+func (c SonarrClientImpl) GetEpisodeFilePath(id int64) (string, int, error) {
+	episodeFile, err := c.LookupTVEpisode(id)
 	if err != nil {
 		return "", -1, err
 	}

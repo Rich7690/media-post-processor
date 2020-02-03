@@ -8,15 +8,40 @@ import (
 	"media-web/internal/config"
 	"media-web/internal/utils"
 	"net/http"
+	"net/url"
 )
 
-type WebClient struct {
-	GetRequest func(path string) (*http.Response, []byte, error)
+type RadarrClient interface {
+	CheckRadarrCommand(id int) (*RadarrCommand, error)
+	RescanMovie(id int64) (*RadarrCommand, error)
+	LookupMovie(id int64) (*RadarrMovie, error)
+	GetAllMovies() ([]RadarrMovie, error)
+	GetMovieFilePath(id int64) (string, error)
 }
 
-func CheckRadarrCommandClient(client WebClient, id int) (*RadarrCommand, error) {
-	resp, body, err := client.GetRequest(fmt.Sprintf("%s/api/command/%d?apikey=%s", config.GetRadarBaseEndpoint(), id, config.GetRadarAPIKey()))
+type RadarrClientImpl struct {
+	webClient utils.WebClient
+}
 
+func GetRadarrClient() RadarrClient {
+	return RadarrClientImpl{
+		webClient:utils.GetWebClient(),
+	}
+}
+
+
+func radarrGetRequest(client utils.WebClient, path string, query url.Values) (*http.Response, []byte, error) {
+	query.Add("apikey", config.GetConfig().RadarrApiKey)
+	return client.MakeGetRequest(*config.GetConfig().RadarrBaseEndpoint, path, query)
+}
+
+func radarrPostRequest(client utils.WebClient, path string, query url.Values, body interface{}) (*http.Response, []byte, error) {
+	query.Add("apikey", config.GetConfig().RadarrApiKey)
+	return utils.MakePostRequest(*config.GetConfig().RadarrBaseEndpoint, path, query, body)
+}
+
+func (c RadarrClientImpl) CheckRadarrCommand(id int) (*RadarrCommand, error) {
+	resp, body, err := radarrGetRequest(c.webClient, fmt.Sprintf("/api/command/%d", id), url.Values{})
 	if err != nil {
 		return nil, err
 	}
@@ -34,28 +59,18 @@ func CheckRadarrCommandClient(client WebClient, id int) (*RadarrCommand, error) 
 
 	} else {
 		log.Err(err).Int("status_code", resp.StatusCode).Str("response", string(body)).Msg("Error calling radarr")
-		return nil, errors.New("Failed to check command")
+		return nil, errors.New("failed to check command")
 	}
 }
 
-func CheckRadarrCommand(id int) (*RadarrCommand, error) {
-
-	return CheckRadarrCommandClient(struct{
-		GetRequest func(path string) (*http.Response, []byte, error)
-	}{
-		GetRequest: utils.GetRequest,
-	}, id)
-
-}
-
-func RescanMovie(id int64) (*RadarrCommand, error) {
+func (c RadarrClientImpl) RescanMovie(id int64) (*RadarrCommand, error) {
 
 	payload := make(map[string]interface{})
 
 	payload["name"] = "RescanMovie"
 	payload["movieId"] = id
 
-	resp, value, err := utils.PostRequest(fmt.Sprintf("%s/api/command/?apikey=%s", config.GetRadarBaseEndpoint(), config.GetRadarAPIKey()), payload)
+	resp, value, err := radarrPostRequest(utils.WebClientImpl{}, "/api/command/", url.Values{}, payload)
 
 	if err != nil {
 		log.Error().Err(err).Msg("Error rescanning movie")
@@ -79,9 +94,10 @@ func RescanMovie(id int64) (*RadarrCommand, error) {
 
 }
 
-func LookupMovie(id int64) (*RadarrMovie, error) {
+func (c RadarrClientImpl) LookupMovie(id int64) (*RadarrMovie, error) {
 
-	resp, body, err := utils.GetRequest(fmt.Sprintf("%s/api/movie/%d?apikey=%s", config.GetRadarBaseEndpoint(), id, config.GetRadarAPIKey()))
+	resp, body, err := radarrGetRequest(utils.WebClientImpl{}, fmt.Sprintf("/api/movie/%d", id), url.Values{})
+
 
 	if err != nil {
 		return nil, err
@@ -108,9 +124,9 @@ func LookupMovie(id int64) (*RadarrMovie, error) {
 	}
 }
 
-func GetAllMovies() ([]RadarrMovie, error) {
+func (c RadarrClientImpl) GetAllMovies() ([]RadarrMovie, error) {
 	response := make([]RadarrMovie, 1)
-	resp, body, err := utils.GetRequest(fmt.Sprintf("%s/api/movie/?apikey=%s", config.GetRadarBaseEndpoint(), config.GetRadarAPIKey()))
+	resp, body, err := radarrGetRequest(utils.WebClientImpl{}, "/api/movie/", url.Values{})
 
 	if err != nil {
 		return nil, err
@@ -137,9 +153,9 @@ func GetAllMovies() ([]RadarrMovie, error) {
 	}
 }
 
-func GetMovieFilePath(id int64) (string, error) {
+func (c RadarrClientImpl) GetMovieFilePath(id int64) (string, error) {
 
-	movie, err := LookupMovie(id)
+	movie, err := c.LookupMovie(id)
 	if err != nil {
 		return "", err
 	}

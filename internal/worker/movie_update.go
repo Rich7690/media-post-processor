@@ -4,16 +4,15 @@ import (
 	"github.com/gocraft/work"
 	"github.com/rs/zerolog/log"
 	"media-web/internal/constants"
-	"media-web/internal/web"
 	"strconv"
 	"strings"
 	"time"
 )
 
-func (c *Webhook) UpdateMovie(job *work.Job) error {
+func (c *WorkerContext) UpdateMovie(job *work.Job) error {
 	movieId := job.ArgInt64(constants.MovieIdKey)
 
-	cmd, err := web.RescanMovie(movieId)
+	cmd, err := c.RadarrClient.RescanMovie(movieId)
 
 	if err != nil {
 		log.Err(err).Msg("Error rescanning movie: " + strconv.Itoa(int(movieId)))
@@ -21,7 +20,7 @@ func (c *Webhook) UpdateMovie(job *work.Job) error {
 	}
 
 	for count := 0; count < 5; count++ {
-		result, err := web.CheckRadarrCommand(cmd.ID)
+		result, err := c.RadarrClient.CheckRadarrCommand(cmd.ID)
 
 		if err == nil {
 			if strings.Index(result.State, "complete") != -1 {
@@ -34,7 +33,7 @@ func (c *Webhook) UpdateMovie(job *work.Job) error {
 			log.Err(err).Msg("Error checking status of command")
 		}
 
-		time.Sleep(time.Second * 15)
+		c.Sleep(time.Second * 15)
 	}
 
 	return nil

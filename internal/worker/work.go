@@ -16,23 +16,27 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
-type Webhook struct {
-	EventType string `json:"eventType"`
+type WorkerContext struct {
+	GetTranscoder func() Transcoder
+	SonarrClient web.SonarrClient
+	RadarrClient web.RadarrClient
+	Sleep func(d time.Duration)
 }
 
 type WorkScheduler struct {
 	EnqueueUnique func(jobName string, args map[string]interface{}) (*work.Job, error)
 }
 
-var worker = work.NewEnqueuer(config.JobQueueNamespace(), &storage.RedisPool)
+var worker = work.NewEnqueuer(config.GetConfig().JobQueueNamespace, &storage.RedisPool)
 
 var Enqueuer = WorkScheduler{
 	EnqueueUnique: worker.EnqueueUnique,
 }
 
-func (c *Webhook) Log(job *work.Job, next work.NextMiddlewareFunc) error {
+func (c *WorkerContext) Log(job *work.Job, next work.NextMiddlewareFunc) error {
 	log.Info().Str("jobId", job.ID).Msg("Starting job: " + job.ID)
 	return next()
 }
@@ -66,7 +70,9 @@ func GetTranscoder() Transcoder {
 	}
 }
 
-func DoTranscode(trans Transcoder, job *work.Job) error {
+func (c *WorkerContext) TranscodeJobHandler(job *work.Job) error {
+	// Create new instance of GetTranscoder
+	trans := c.GetTranscoder()
 	transcodeType := constants.TranscodeType(job.ArgString(constants.TranscodeTypeKey))
 
 	var inputFilePath = ""
@@ -76,10 +82,10 @@ func DoTranscode(trans Transcoder, job *work.Job) error {
 	switch transcodeType {
 	case constants.TV:
 		id = job.ArgInt64(constants.EpisodeFileIdKey)
-		inputFilePath, seriesId, err = web.GetEpisodeFilePath(id)
+		inputFilePath, seriesId, err = web.GetSonarrClient().GetEpisodeFilePath(id)
 	case constants.Movie:
 		id = job.ArgInt64(constants.MovieIdKey)
-		inputFilePath, err = web.GetMovieFilePath(id)
+		inputFilePath, err = c.RadarrClient.GetMovieFilePath(id)
 	default:
 		log.Warn().Msg("Unknown transcodeType: " + string(transcodeType))
 		return nil
@@ -98,15 +104,15 @@ func DoTranscode(trans Transcoder, job *work.Job) error {
 	}
 
 	trans.SetConfiguration(ffmpeg.Configuration{
-		FfmpegBin:  config.GetFfmpegPath(),
-		FfprobeBin: config.GetFfprobePath(),
+		FfmpegBin:  config.GetConfig().FfmpegPath,
+		FfprobeBin: config.GetConfig().FfprobePath,
 	})
 
 	if !utils.FileExists(inputFilePath) {
 		log.Warn().Msg("Could not find file at path: " + inputFilePath)
 		return nil
 	}
-	// Initialize transcoder passing the input file path and output file path
+	// Initialize GetTranscoder passing the input file path and output file path
 	ext := filepath.Ext(inputFilePath)
 
 	if ext == ".mp4" {
@@ -137,7 +143,7 @@ func DoTranscode(trans Transcoder, job *work.Job) error {
 
 	log.Debug().Msg("Running ffmpeg command: \"" + strings.Join(trans.MediaFile().ToStrCommand(), " ") + "\"")
 
-	// Start transcoder process with progress checking
+	// Start GetTranscoder process with progress checking
 	done := trans.Run(true)
 	//done := make(chan error, 1)
 	//done <- nil
@@ -162,7 +168,7 @@ func DoTranscode(trans Transcoder, job *work.Job) error {
 
 	log.Info().Msg("Deleting old file")
 
-	err = os.Remove(inputFilePath)
+	//err = os.Remove(inputFilePath)
 
 	if err != nil {
 		log.Error().Err(err).Msg("Error deleting old file")
@@ -193,37 +199,37 @@ func DoTranscode(trans Transcoder, job *work.Job) error {
 	return err
 }
 
-func (c *Webhook) TranscodeJobHandler(job *work.Job) error {
-	// Create new instance of transcoder
-	trans := GetTranscoder()
-	return DoTranscode(trans, job)
-}
-
 func WorkerPool() {
 	log.Info().Msg("Starting worker pool")
-	pool := work.NewWorkerPool(Webhook{}, 20, config.JobQueueNamespace(), &storage.RedisPool)
-	pool.Middleware((*Webhook).Log)
+	context := WorkerContext{
+		GetTranscoder: GetTranscoder,
+		SonarrClient: web.GetSonarrClient(),
+		RadarrClient: web.GetRadarrClient(),
+		Sleep: time.Sleep,
+	}
+	pool := work.NewWorkerPool(context, 20, config.GetConfig().JobQueueNamespace, &storage.RedisPool)
+	pool.Middleware((context).Log)
 
 	pool.JobWithOptions(constants.TranscodeJobType, work.JobOptions{
 		Priority:       1,
 		MaxFails:       3,
 		SkipDead:       false,
 		MaxConcurrency: 1,
-	}, (*Webhook).TranscodeJobHandler)
+	}, context.TranscodeJobHandler)
 
 	pool.JobWithOptions(constants.UpdateSonarrJobName, work.JobOptions{
 		Priority:       2,
 		MaxFails:       5,
 		SkipDead:       false,
 		MaxConcurrency: 5,
-	}, (*Webhook).UpdateTVShow)
+	}, context.UpdateTVShow)
 
 	pool.JobWithOptions(constants.UpdateRadarrJobName, work.JobOptions{
 		Priority:       2,
 		MaxFails:       5,
 		SkipDead:       false,
 		MaxConcurrency: 5,
-	}, (*Webhook).UpdateMovie)
+	}, context.UpdateMovie)
 
 	// Start processing jobs
 	pool.Start()

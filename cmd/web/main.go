@@ -7,6 +7,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"media-web/internal/config"
 	"media-web/internal/controllers"
+	"media-web/internal/web"
 	"media-web/internal/worker"
 	"os"
 	"os/signal"
@@ -56,12 +57,8 @@ func startSonarrScanner() {
 		select {
 		case <-repeat:
 			log.Info().Msg("Scanning for TV in wrong format")
-			err := worker.ScanForTVShows(worker.TVScannerImpl, worker.Enqueuer)
-
+			worker.ScanForTVShows(web.GetSonarrClient(), worker.Enqueuer)
 			log.Info().Msg("Done scanning for TV shows")
-			if err != nil {
-				log.Err(err).Msg("Error scanning for TV shows")
-			}
 			break
 		}
 	}
@@ -80,7 +77,7 @@ func startRadarrScanner() {
 		select {
 		case <-repeat:
 			log.Info().Msg("Scanning for movies in wrong format")
-			err := worker.ScanForMovies(worker.MovieScannerImpl, worker.Enqueuer)
+			err := worker.ScanForMovies(web.GetRadarrClient(), worker.Enqueuer)
 			log.Info().Msg("Done scanning for movies")
 			if err != nil {
 				log.Err(err).Msg("Error scanning for movies")
@@ -97,10 +94,11 @@ func startWebserver() {
 	r := gin.Default()
 
 	r.Use(static.ServeRoot("/", "./public"))
+	r.Use(gin.Recovery())
 	r.GET("/health", controllers.HealthHandler)
 	r.POST("/api/radarr/webhook", controllers.GetRadarrWebhookHandler(worker.Enqueuer))
 	r.POST("/api/sonarr/webhook", controllers.GetSonarrWebhookHandler(worker.Enqueuer))
-	r.GET("/api/config", controllers.GetConfigHandler)
+	//r.GET("/api/config", controllers.GetConfigHandler)
 
 	err := r.Run()
 
@@ -113,23 +111,21 @@ func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
 	log.Logger = log.Level(zerolog.DebugLevel).With().Timestamp().Logger()
 
-	if config.EnablePrettyLog() {
+	if config.GetConfig().EnablePrettyLog {
 		log.Logger = log.Level(zerolog.DebugLevel).Output(zerolog.ConsoleWriter{Out: os.Stdout})
 	}
 
-	if config.EnableWeb() {
-		go startWebserver()
-	}
+	go startWebserver()
 
-	if config.EnableWorker() {
+	if config.GetConfig().EnableWorker {
 		go startWorker()
 	}
 
-	if config.EnableRadarrScanner() {
+	if config.GetConfig().EnableRadarrScanner {
 		go startRadarrScanner()
 	}
 
-	if config.EnableSonarrScanner() {
+	if config.GetConfig().EnableSonarrScanner {
 		go startSonarrScanner()
 	}
 

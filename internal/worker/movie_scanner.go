@@ -8,13 +8,9 @@ import (
 	"path/filepath"
 )
 
-type MovieScanner struct {
-	GetAllMovies  func() ([]web.RadarrMovie, error)
-}
+func ScanForMovies(client web.RadarrClient, scheduler WorkScheduler) error {
 
-func ScanForMovies(scanner MovieScanner, scheduler WorkScheduler) error {
-
-	movies, err := scanner.GetAllMovies()
+	movies, err := client.GetAllMovies()
 
 	if err != nil {
 		return err

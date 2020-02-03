@@ -3,7 +3,6 @@ package constants
 import "os"
 
 var IsLocal = os.Getenv("LOCAL") == "true"
-var IsTest = os.Getenv("IS_TEST") == "true"
 
 const SeriesIdKey = "seriesId"
 const MovieIdKey = "movieId"

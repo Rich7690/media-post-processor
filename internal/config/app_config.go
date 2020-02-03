@@ -1,80 +1,44 @@
 package config
 
 import (
-	"os"
+	"github.com/caarlos0/env/v6"
+	"github.com/rs/zerolog/log"
+	"net/url"
+	"reflect"
 )
 
-var enableWeb = os.Getenv("ENABLE_WEB")
-var enableWorker = os.Getenv("ENABLE_WORKER")
-var radarAPIKey = os.Getenv("RADARR_API_KEY")
-var radarBaseEndpoint = os.Getenv("RADARR_BASE_ENDPOINT")
-var sonarrAPIKey = os.Getenv("SONARR_API_KEY")
-var sonarrBaseEndpoint = os.Getenv("SONARR_BASE_ENDPOINT")
-var redisAddress = os.Getenv("REDIS_ADDRESS")
-var ffmpegBin = os.Getenv("FFMPEG_PATH")
-var ffprobeBin = os.Getenv("FFPROBE_PATH")
-var enableRadarrScanner = os.Getenv("ENABLE_RADARR_SCANNER")
-var enableSonarrScanner = os.Getenv("ENABLE_SONARR_SCANNER")
-var prettyLog = os.Getenv("ENABLE_PRETTYLOG")
-var jobQueueNamespace = os.Getenv("JOB_QUEUE_NAMESPACE")
+type Config struct {
+	EnableWeb           bool     `env:"ENABLE_WEB" envDefault:"true"`
+	EnableWorker        bool     `env:"ENABLE_WORKER" envDefault:"false"`
+	EnableRadarrScanner bool     `env:"ENABLE_RADARR_SCANNER" envDefault:"false"`
+	EnableSonarrScanner bool     `env:"ENABLE_SONARR_SCANNER" envDefault:"false"`
+	EnablePrettyLog     bool     `env:"ENABLE_PRETTYLOG" envDefault:"false"`
+	RadarrApiKey        string   `env:"RADARR_API_KEY"`
+	SonarrApiKey        string   `env:"SONARR_API_KEY"`
+	RadarrBaseEndpoint  *url.URL `env:"RADARR_BASE_ENDPOINT"`
+	SonarrBaseEndpoint  *url.URL `env:"SONARR_BASE_ENDPOINT"`
+	RedisAddress        *url.URL `env:"REDIS_ADDRESS"`
+	JobQueueNamespace   string   `env:"JOB_QUEUE_NAMESPACE" envDefault:"media-web"`
+	FfmpegPath          string   `env:"FFMPEG_PATH" envDefault:"/usr/bin/ffmpeg"`
+	FfprobePath         string   `env:"FFPROBE_PATH" envDefault:"/usr/bin/ffprobe"`
+}
 
-func JobQueueNamespace() string {
-	if jobQueueNamespace != "" {
-		return jobQueueNamespace
+var config = ValidateConfig()
+
+func ValidateConfig() Config {
+	cfg := Config{}
+	funcs := make(map[reflect.Type]env.ParserFunc)
+	funcs[reflect.TypeOf(&url.URL{})] = func(v string) (i interface{}, e error) {
+		return url.Parse(v)
 	}
-	return "media-web"
-}
 
-func EnablePrettyLog() bool {
-	return prettyLog == "true"
-}
-
-func EnableSonarrScanner() bool {
-	return enableSonarrScanner == "true"
-}
-
-func EnableRadarrScanner() bool {
-	return enableRadarrScanner == "true"
-}
-
-func EnableWeb() bool {
-	return enableWeb == "true"
-}
-
-func EnableWorker() bool {
-	return enableWorker == "true"
-}
-
-func GetFfmpegPath() string {
-	if ffmpegBin != "" {
-		return ffmpegBin
+	if err := env.ParseWithFuncs(&cfg, funcs); err != nil {
+		log.Fatal().Err(err).Msg("Failed to parse config")
 	}
-	return "/usr/bin/ffmpeg"
+
+	return cfg
 }
 
-func GetFfprobePath() string {
-	if ffprobeBin != "" {
-		return ffprobeBin
-	}
-	return "/usr/bin/ffprobe"
-}
-
-func GetRedisAddress() string {
-	return redisAddress
-}
-
-func GetRadarAPIKey() string {
-	return radarAPIKey
-}
-
-func GetRadarBaseEndpoint() string {
-	return radarBaseEndpoint
-}
-
-func GetSonarrAPIKey() string {
-	return sonarrAPIKey
-}
-
-func GetSonarrBaseEndpoint() string {
-	return sonarrBaseEndpoint
+func GetConfig() Config {
+	return config
 }

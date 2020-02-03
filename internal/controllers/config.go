@@ -1,13 +1,5 @@
 package controllers
 
-import (
-	"github.com/gin-gonic/gin"
-	"math"
-	"media-web/internal/config"
-	"net/url"
-	"strings"
-)
-
 type Config struct {
 	RadarrApiKey   string `json:"RadarrApiKey"`
 	RadarrEndpoint string `json:"RadarrEndpoint"`
@@ -17,7 +9,7 @@ type Config struct {
 	RadarrScannerEnabled bool `json:"RadarrScannerEnabled"`
 	SonarrScannerEnabled bool `json:"SonarrScannerEnabled"`
 }
-
+/*
 func SecretKey(key string) string {
 
 	keyLen := len(key)
@@ -32,8 +24,7 @@ func SecretKey(key string) string {
 	return key[0:(len(key)-amountToTrim)] + secret
 }
 
-
-func SecretUrl(urlString string) (string) {
+func SecretUrl(urlString string) string {
 	u, err := url.Parse(urlString)
 	if err != nil {
 		return ""
@@ -63,14 +54,7 @@ func SecretUrl(urlString string) (string) {
 func GetConfigHandler(c *gin.Context) {
 
 	conf := Config{
-		RadarrApiKey:   SecretKey(config.GetRadarAPIKey()),
-		RadarrEndpoint: SecretUrl(config.GetRadarBaseEndpoint()),
-		SonarrApiKey:   SecretKey(config.GetSonarrAPIKey()),
-		SonarrEndpoint: SecretUrl(config.GetSonarrBaseEndpoint()),
-		WorkerEnabled:  config.EnableWorker(),
-		RadarrScannerEnabled: config.EnableRadarrScanner(),
-		SonarrScannerEnabled: config.EnableSonarrScanner(),
 	}
 
 	c.JSON(200, conf)
-}
+}*/
