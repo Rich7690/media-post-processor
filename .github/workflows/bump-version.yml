@@ -1,6 +1,8 @@
 name: Master Build and Version Bump
 on:
   push:
+    branches-ignore:
+      - dev
     branches:
       - master
 jobs:
