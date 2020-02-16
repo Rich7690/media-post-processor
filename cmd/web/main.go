@@ -89,7 +89,7 @@ func startRadarrScanner() {
 
 func startWebserver() {
 	log.Info().Msg("Starting server.")
-	gin.DefaultWriter = writer{}
+	gin.DefaultWriter = nullWriter{}
 	gin.DefaultErrorWriter = errorWriter{}
 	r := gin.Default()
 

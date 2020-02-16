@@ -35,7 +35,6 @@ func ValidateConfig() Config {
 	if err := env.ParseWithFuncs(&cfg, funcs); err != nil {
 		log.Fatal().Err(err).Msg("Failed to parse config")
 	}
-
 	return cfg
 }
 
