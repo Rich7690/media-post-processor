@@ -1,4 +1,5 @@
 name: Docker Build
+on:
   push:
     branches:
       - dev
