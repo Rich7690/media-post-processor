@@ -1,5 +1,9 @@
-name: Build PR
-on: [pull_request]
+name: Golang Build
+  push:
+    branches:
+      - dev
+  pull_request:
+    types: [opened, synchronize, reopened]
 jobs:
 
   build:

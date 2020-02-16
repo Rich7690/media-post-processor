@@ -1,5 +1,9 @@
-name: Docker PR
-on: [pull_request]
+name: Docker Build
+  push:
+    branches:
+      - dev
+  pull_request:
+    types: [opened, synchronize, reopened]
 jobs:
 
   build:
