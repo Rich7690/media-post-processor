@@ -37,7 +37,7 @@ func radarrGetRequest(client utils.WebClient, path string, query url.Values) (*h
 
 func radarrPostRequest(client utils.WebClient, path string, query url.Values, body interface{}) (*http.Response, []byte, error) {
 	query.Add("apikey", config.GetConfig().RadarrApiKey)
-	return utils.MakePostRequest(*config.GetConfig().RadarrBaseEndpoint, path, query, body)
+	return client.MakePostRequest(*config.GetConfig().RadarrBaseEndpoint, path, query, body)
 }
 
 func (c RadarrClientImpl) CheckRadarrCommand(id int) (*RadarrCommand, error) {

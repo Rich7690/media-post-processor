@@ -11,6 +11,11 @@ import (
 	"time"
 )
 
+type WebClient interface{
+	MakeGetRequest(url url.URL, path string, values url.Values) (*http.Response, []byte, error)
+	MakePostRequest(url url.URL, path string, values url.Values, body interface{}) (*http.Response, []byte, error)
+}
+
 type WebClientImpl struct {
 	client http.Client
 }
@@ -20,23 +25,18 @@ func GetWebClient() WebClient {
 }
 
 func (c WebClientImpl) MakeGetRequest(url url.URL, path string, values url.Values) (*http.Response, []byte, error) {
-	return MakeGetRequest(url, path, values)
+	return makeGetRequest(url, path, values)
 }
 
 func (c WebClientImpl) MakePostRequest(url url.URL, path string, values url.Values, body interface{}) (*http.Response, []byte, error) {
-	return MakePostRequest(url, path, values, body)
-}
-
-type WebClient interface{
-	MakeGetRequest(url url.URL, path string, values url.Values) (*http.Response, []byte, error)
-	MakePostRequest(url url.URL, path string, values url.Values, body interface{}) (*http.Response, []byte, error)
+	return makePostRequest(url, path, values, body)
 }
 
 var netClient = http.Client{
 	Timeout: time.Second * 10,
 }
 
-func MakePostRequest(url url.URL, path string, values url.Values, body interface{}) (*http.Response, []byte, error) {
+func makePostRequest(url url.URL, path string, values url.Values, body interface{}) (*http.Response, []byte, error) {
 	value, err := json.Marshal(body)
 
 	if err != nil {
@@ -67,7 +67,7 @@ func MakePostRequest(url url.URL, path string, values url.Values, body interface
 	return resp, response, err
 }
 
-func MakeGetRequest(url url.URL, path string, values url.Values) (*http.Response, []byte, error) {
+func makeGetRequest(url url.URL, path string, values url.Values) (*http.Response, []byte, error) {
 	finalPath := path2.Join(url.Path, path)
 	url.RawPath = finalPath
 	url.Path = finalPath

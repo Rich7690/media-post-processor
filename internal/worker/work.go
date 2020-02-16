@@ -1,21 +1,15 @@
 package worker
 
 import (
-	"fmt"
 	"github.com/gocraft/work"
+	"github.com/gomodule/redigo/redis"
 	"github.com/rs/zerolog/log"
-	"github.com/xfrr/goffmpeg/ffmpeg"
-	"github.com/xfrr/goffmpeg/models"
-	"github.com/xfrr/goffmpeg/transcoder"
 	"media-web/internal/config"
 	"media-web/internal/constants"
 	"media-web/internal/storage"
-	"media-web/internal/utils"
 	"media-web/internal/web"
 	"os"
 	"os/signal"
-	"path/filepath"
-	"strings"
 	"time"
 )
 
@@ -23,6 +17,7 @@ type WorkerContext struct {
 	GetTranscoder func() Transcoder
 	SonarrClient web.SonarrClient
 	RadarrClient web.RadarrClient
+	Enqueuer WorkScheduler
 	Sleep func(d time.Duration)
 }
 
@@ -41,174 +36,60 @@ func (c *WorkerContext) Log(job *work.Job, next work.NextMiddlewareFunc) error {
 	return next()
 }
 
-type Transcoder struct {
-	SetConfiguration func(config ffmpeg.Configuration)
-	Initialize       func(input string, output string) error
-	MediaFile        func() *models.Mediafile
-	Output           func() <-chan models.Progress
-	Run              func(progress bool) <-chan error
+
+var workerContext = WorkerContext{
+	GetTranscoder: GetTranscoder,
+	SonarrClient: web.GetSonarrClient(),
+	RadarrClient: web.GetRadarrClient(),
+	Enqueuer: Enqueuer,
+	Sleep: time.Sleep,
 }
 
-func GetTranscoder() Transcoder {
-	trans := transcoder.Transcoder{}
-	return Transcoder{
-		SetConfiguration: func(config ffmpeg.Configuration) {
-			trans.SetConfiguration(config)
-		},
-		Initialize: func(input string, output string) error {
-			return trans.Initialize(input, output)
-		},
-		MediaFile: func() *models.Mediafile {
-			return trans.MediaFile()
-		},
-		Output: func() <-chan models.Progress {
-			return trans.Output()
-		},
-		Run: func(progress bool) <-chan error {
-			return trans.Run(progress)
-		},
+func GetWorkerContext() WorkerContext {
+	return workerContext
+}
+
+type WorkerPoolFactory interface {
+	NewWorkerPool(ctx interface{}, concurrency uint, namespace string, pool *redis.Pool) WorkerPool
+}
+
+type WorkerPoolFactoryImpl struct {
+}
+
+func (f WorkerPoolFactoryImpl) NewWorkerPool(ctx interface{}, concurrency uint, namespace string, pool *redis.Pool) WorkerPool {
+	return &WorkerPoolImpl{
+		pool: work.NewWorkerPool(ctx, concurrency, namespace, pool),
 	}
 }
 
-func (c *WorkerContext) TranscodeJobHandler(job *work.Job) error {
-	// Create new instance of GetTranscoder
-	trans := c.GetTranscoder()
-	transcodeType := constants.TranscodeType(job.ArgString(constants.TranscodeTypeKey))
-
-	var inputFilePath = ""
-	var id int64 = -1
-	var err error = nil
-	var seriesId = -1
-	switch transcodeType {
-	case constants.TV:
-		id = job.ArgInt64(constants.EpisodeFileIdKey)
-		inputFilePath, seriesId, err = web.GetSonarrClient().GetEpisodeFilePath(id)
-	case constants.Movie:
-		id = job.ArgInt64(constants.MovieIdKey)
-		inputFilePath, err = c.RadarrClient.GetMovieFilePath(id)
-	default:
-		log.Warn().Msg("Unknown transcodeType: " + string(transcodeType))
-		return nil
-	}
-
-	if err != nil {
-		log.Error().Err(err).Msg("Error getting input file path")
-		return err
-	}
-
-	if inputFilePath != "" {
-		log.Info().Msg("Working on transcode at path: " + inputFilePath)
-	} else {
-		log.Warn().Msg("Could not get input file path")
-		return nil
-	}
-
-	trans.SetConfiguration(ffmpeg.Configuration{
-		FfmpegBin:  config.GetConfig().FfmpegPath,
-		FfprobeBin: config.GetConfig().FfprobePath,
-	})
-
-	if !utils.FileExists(inputFilePath) {
-		log.Warn().Msg("Could not find file at path: " + inputFilePath)
-		return nil
-	}
-	// Initialize GetTranscoder passing the input file path and output file path
-	ext := filepath.Ext(inputFilePath)
-
-	if ext == ".mp4" {
-		log.Debug().Msg("File is already mp4 extension. Skipping...")
-		return nil
-	} else {
-		log.Debug().Msg("Current extension: " + ext)
-	}
-
-	fileName := filepath.Base(inputFilePath)
-	baseDir := filepath.Dir(inputFilePath)
-	newPath := baseDir + "/" + strings.Replace(fileName, ext, ".mp4", 1)
-	log.Debug().Msg("Transcoding to path: " + newPath)
-	err = trans.Initialize(inputFilePath, newPath)
-
-	if err != nil {
-		log.Err(err).Msg("Error initializing transcode")
-		return err
-	}
-
-	log.Info().Msg("Transcoding: " + trans.MediaFile().InputPath())
-
-	trans.MediaFile().SetPreset("veryfast")
-	trans.MediaFile().SetOutputFormat("mp4")
-	trans.MediaFile().SetVideoCodec("libx264")
-	trans.MediaFile().SetQuality(23)
-	trans.MediaFile().SetTune("film")
-
-	log.Debug().Msg("Running ffmpeg command: \"" + strings.Join(trans.MediaFile().ToStrCommand(), " ") + "\"")
-
-	// Start GetTranscoder process with progress checking
-	done := trans.Run(true)
-	//done := make(chan error, 1)
-	//done <- nil
-
-	// Returns a channel to get the transcoding progress
-	progress := trans.Output()
-
-	// Example of printing transcoding progress
-	for msg := range progress {
-		message := "Transcoding: " + inputFilePath + " -> " + fmt.Sprint(msg)
-		log.Debug().Float64("progress", msg.Progress).Msg("Transcoding: " + inputFilePath)
-		job.Checkin(message)
-	}
-
-	// This channel is used to wait for the transcoding process to end
-	err = <-done
-
-	if err != nil {
-		log.Error().Err(err).Msg("Error performing transcode")
-		return err
-	}
-
-	log.Info().Msg("Deleting old file")
-
-	//err = os.Remove(inputFilePath)
-
-	if err != nil {
-		log.Error().Err(err).Msg("Error deleting old file")
-	}
-
-	log.Info().Msg("Done transcoding: " + newPath)
-
-	if transcodeType == constants.TV {
-		updateJob, err := Enqueuer.EnqueueUnique("update-sonarr", work.Q{
-			constants.SeriesIdKey: seriesId,
-		})
-		if err != nil {
-			log.Error().Err(err).Msg("Failed to enqueue update job")
-		} else {
-			log.Debug().Msg("Created job: " + updateJob.ID)
-		}
-
-	} else if transcodeType == constants.Movie {
-		updateJob, err := Enqueuer.EnqueueUnique("update-radarr", work.Q{
-			constants.MovieIdKey: id,
-		})
-		if err != nil {
-			log.Error().Err(err).Msg("Failed to enqueue update job")
-		} else {
-			log.Debug().Msg("Created job: " + updateJob.ID)
-		}
-	}
-	return err
+type WorkerPool interface {
+	Middleware(fn interface{})
+	JobWithOptions(name string, jobOpts work.JobOptions, fn interface{})
+	Start()
+	Stop()
 }
 
-func WorkerPool() {
+type WorkerPoolImpl struct {
+	pool *work.WorkerPool
+}
+
+func (w WorkerPoolImpl) Middleware(fn interface{}) {
+	w.pool.Middleware(fn)
+}
+func (w WorkerPoolImpl) JobWithOptions(name string, jobOpts work.JobOptions, fn interface{}) {
+	w.pool.JobWithOptions(name, jobOpts, fn)
+}
+func (w WorkerPoolImpl) Start()  {
+	w.pool.Start()
+}
+func (w WorkerPoolImpl) Stop()  {
+	w.pool.Stop()
+}
+
+func StartWorkerPool(context WorkerContext, factory WorkerPoolFactory) {
 	log.Info().Msg("Starting worker pool")
-	context := WorkerContext{
-		GetTranscoder: GetTranscoder,
-		SonarrClient: web.GetSonarrClient(),
-		RadarrClient: web.GetRadarrClient(),
-		Sleep: time.Sleep,
-	}
-	pool := work.NewWorkerPool(context, 20, config.GetConfig().JobQueueNamespace, &storage.RedisPool)
-	pool.Middleware((context).Log)
+	pool := factory.NewWorkerPool(context, 20, config.GetConfig().JobQueueNamespace, &storage.RedisPool)
+	pool.Middleware(context.Log)
 
 	pool.JobWithOptions(constants.TranscodeJobType, work.JobOptions{
 		Priority:       1,

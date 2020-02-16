@@ -41,7 +41,7 @@ func (w errorWriter) Write(p []byte) (n int, err error) {
 
 func startWorker() {
 	log.Info().Msg("Starting worker.")
-	worker.WorkerPool()
+	worker.StartWorkerPool(worker.GetWorkerContext(), worker.WorkerPoolFactoryImpl{})
 }
 
 func startSonarrScanner() {
