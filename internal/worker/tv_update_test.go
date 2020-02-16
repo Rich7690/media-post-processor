@@ -16,7 +16,7 @@ func TestRescanSeriesErrorReturns(t *testing.T) {
 		return nil, errors.New("test error")
 	}
 	context := WorkerContext{
-		SonarrClient:  mockClient,
+		SonarrClient: mockClient,
 	}
 
 	err := context.UpdateTVShow(&work.Job{Args: map[string]interface{}{constants.SeriesIdKey: 1}})
@@ -29,16 +29,16 @@ func TestRescanNoErrorOnNonCompleteAfterAllTries(t *testing.T) {
 	callRescan := false
 	mockClient.rescanSeries = func(id int64) (*web.SonarrCommand, error) {
 		callRescan = true
-		return &web.SonarrCommand{ID:1}, nil
+		return &web.SonarrCommand{ID: 1}, nil
 	}
 	callCheck := false
 	mockClient.checkSonarrCommand = func(id int) (*web.SonarrCommand, error) {
 		callCheck = true
-		return &web.SonarrCommand{ID:1, State:""}, nil
+		return &web.SonarrCommand{ID: 1, State: ""}, nil
 	}
 	context := WorkerContext{
-		SonarrClient:  mockClient,
-		Sleep: func(d time.Duration) {},
+		SonarrClient: mockClient,
+		Sleep:        func(d time.Duration) {},
 	}
 
 	err := context.UpdateTVShow(&work.Job{Args: map[string]interface{}{constants.SeriesIdKey: 1}})
@@ -53,16 +53,16 @@ func TestRescanNoErrorOnComplete(t *testing.T) {
 	callRescan := false
 	mockClient.rescanSeries = func(id int64) (*web.SonarrCommand, error) {
 		callRescan = true
-		return &web.SonarrCommand{ID:1}, nil
+		return &web.SonarrCommand{ID: 1}, nil
 	}
 	callCheck := false
 	mockClient.checkSonarrCommand = func(id int) (*web.SonarrCommand, error) {
 		callCheck = true
-		return &web.SonarrCommand{ID:1, State:"complete"}, nil
+		return &web.SonarrCommand{ID: 1, State: "complete"}, nil
 	}
 	context := WorkerContext{
-		SonarrClient:  mockClient,
-		Sleep: func(d time.Duration) {},
+		SonarrClient: mockClient,
+		Sleep:        func(d time.Duration) {},
 	}
 
 	err := context.UpdateTVShow(&work.Job{Args: map[string]interface{}{constants.SeriesIdKey: 1}})
@@ -77,16 +77,16 @@ func TestRescanNoErrorCheckCommand(t *testing.T) {
 	callRescan := false
 	mockClient.rescanSeries = func(id int64) (*web.SonarrCommand, error) {
 		callRescan = true
-		return &web.SonarrCommand{ID:1}, nil
+		return &web.SonarrCommand{ID: 1}, nil
 	}
 	callCheck := false
 	mockClient.checkSonarrCommand = func(id int) (*web.SonarrCommand, error) {
 		callCheck = true
-		return &web.SonarrCommand{ID:1, State:""}, errors.New("test error")
+		return &web.SonarrCommand{ID: 1, State: ""}, errors.New("test error")
 	}
 	context := WorkerContext{
-		SonarrClient:  mockClient,
-		Sleep: func(d time.Duration) {},
+		SonarrClient: mockClient,
+		Sleep:        func(d time.Duration) {},
 	}
 
 	err := context.UpdateTVShow(&work.Job{Args: map[string]interface{}{constants.SeriesIdKey: 1}})

@@ -1,14 +1,15 @@
 package controllers
 
 type Config struct {
-	RadarrApiKey   string `json:"RadarrApiKey"`
-	RadarrEndpoint string `json:"RadarrEndpoint"`
-	SonarrApiKey   string `json:"SonarrApiKey"`
-	SonarrEndpoint string `json:"SonarrEndpoint"`
-	WorkerEnabled  bool   `json:"WorkerEnabled"`
-	RadarrScannerEnabled bool `json:"RadarrScannerEnabled"`
-	SonarrScannerEnabled bool `json:"SonarrScannerEnabled"`
+	RadarrApiKey         string `json:"RadarrApiKey"`
+	RadarrEndpoint       string `json:"RadarrEndpoint"`
+	SonarrApiKey         string `json:"SonarrApiKey"`
+	SonarrEndpoint       string `json:"SonarrEndpoint"`
+	WorkerEnabled        bool   `json:"WorkerEnabled"`
+	RadarrScannerEnabled bool   `json:"RadarrScannerEnabled"`
+	SonarrScannerEnabled bool   `json:"SonarrScannerEnabled"`
 }
+
 /*
 func SecretKey(key string) string {
 

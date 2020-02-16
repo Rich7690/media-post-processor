@@ -38,4 +38,3 @@ func (c *WorkerContext) UpdateMovie(job *work.Job) error {
 
 	return nil
 }
-

@@ -15,10 +15,10 @@ import (
 
 type WorkerContext struct {
 	GetTranscoder func() Transcoder
-	SonarrClient web.SonarrClient
-	RadarrClient web.RadarrClient
-	Enqueuer WorkScheduler
-	Sleep func(d time.Duration)
+	SonarrClient  web.SonarrClient
+	RadarrClient  web.RadarrClient
+	Enqueuer      WorkScheduler
+	Sleep         func(d time.Duration)
 }
 
 type WorkScheduler struct {
@@ -36,13 +36,12 @@ func (c *WorkerContext) Log(job *work.Job, next work.NextMiddlewareFunc) error {
 	return next()
 }
 
-
 var workerContext = WorkerContext{
 	GetTranscoder: GetTranscoder,
-	SonarrClient: web.GetSonarrClient(),
-	RadarrClient: web.GetRadarrClient(),
-	Enqueuer: Enqueuer,
-	Sleep: time.Sleep,
+	SonarrClient:  web.GetSonarrClient(),
+	RadarrClient:  web.GetRadarrClient(),
+	Enqueuer:      Enqueuer,
+	Sleep:         time.Sleep,
 }
 
 func GetWorkerContext() WorkerContext {
@@ -79,10 +78,10 @@ func (w WorkerPoolImpl) Middleware(fn interface{}) {
 func (w WorkerPoolImpl) JobWithOptions(name string, jobOpts work.JobOptions, fn interface{}) {
 	w.pool.JobWithOptions(name, jobOpts, fn)
 }
-func (w WorkerPoolImpl) Start()  {
+func (w WorkerPoolImpl) Start() {
 	w.pool.Start()
 }
-func (w WorkerPoolImpl) Stop()  {
+func (w WorkerPoolImpl) Stop() {
 	w.pool.Stop()
 }
 

@@ -12,7 +12,7 @@ var RedisPool = redis.Pool{
 	MaxIdle:   10,
 	Wait:      true,
 	Dial: func() (redis.Conn, error) {
-		return redis.DialURL(config.GetConfig().RedisAddress.String(), redis.DialKeepAlive(5 * time.Minute),
-			redis.DialReadTimeout(5 * time.Second), redis.DialConnectTimeout(5 * time.Second))
+		return redis.DialURL(config.GetConfig().RedisAddress.String(), redis.DialKeepAlive(5*time.Minute),
+			redis.DialReadTimeout(5*time.Second), redis.DialConnectTimeout(5*time.Second))
 	},
 }

@@ -213,9 +213,9 @@ type RadarrMovie struct {
 		Votes int     `json:"votes"`
 		Value float64 `json:"value"`
 	} `json:"ratings"`
-	MovieFile MovieFile `json:"movieFile"`
-	QualityProfileID int `json:"qualityProfileId"`
-	ID               int `json:"id"`
+	MovieFile        MovieFile `json:"movieFile"`
+	QualityProfileID int       `json:"qualityProfileId"`
+	ID               int       `json:"id"`
 }
 
 type MovieFile struct {
@@ -302,9 +302,9 @@ type SonarrEpisodeFile struct {
 }
 
 type MovieSearchResults struct {
-	Page         int       `json:"page"`
-	TotalResults int       `json:"total_results"`
-	TotalPages   int       `json:"total_pages"`
+	Page         int                 `json:"page"`
+	TotalResults int                 `json:"total_results"`
+	TotalPages   int                 `json:"total_pages"`
 	Results      []MovieSearchResult `json:"results"`
 }
 

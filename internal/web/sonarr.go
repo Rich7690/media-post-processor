@@ -27,7 +27,7 @@ type SonarrClientImpl struct {
 
 func GetSonarrClient() SonarrClient {
 	return SonarrClientImpl{
-		webClient:utils.GetWebClient(),
+		webClient: utils.GetWebClient(),
 	}
 }
 
@@ -195,4 +195,3 @@ func (c SonarrClientImpl) GetEpisodeFilePath(id int64) (string, int, error) {
 	}
 	return "", -1, nil
 }
-

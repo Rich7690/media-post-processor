@@ -14,4 +14,6 @@ require (
 	github.com/rs/zerolog v1.17.2
 	github.com/stretchr/testify v1.4.0
 	github.com/xfrr/goffmpeg v0.0.0-20191120110122-53b0a69281d4
+	golang.org/x/lint v0.0.0-20200130185559-910be7a94367 // indirect
+	golang.org/x/tools v0.0.0-20200214225126-5916a50871fb // indirect
 )

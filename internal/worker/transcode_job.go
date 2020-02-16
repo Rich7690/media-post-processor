@@ -180,4 +180,3 @@ func (c *WorkerContext) TranscodeJobHandler(job *work.Job) error {
 	}
 	return err
 }
-

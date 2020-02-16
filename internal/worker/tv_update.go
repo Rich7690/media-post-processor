@@ -39,4 +39,3 @@ func (c *WorkerContext) UpdateTVShow(job *work.Job) error {
 
 	return err
 }
-

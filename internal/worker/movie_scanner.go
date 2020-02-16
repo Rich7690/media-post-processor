@@ -36,4 +36,3 @@ func ScanForMovies(client web.RadarrClient, scheduler WorkScheduler) error {
 
 	return nil
 }
-

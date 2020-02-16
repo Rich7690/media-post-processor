@@ -39,4 +39,3 @@ func ScanForTVShows(sonarrClient web.SonarrClient, scheduler WorkScheduler) {
 		}
 	}
 }
-

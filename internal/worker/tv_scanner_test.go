@@ -9,7 +9,6 @@ import (
 	"testing"
 )
 
-
 func (m MockSonarr) GetAllEpisodeFiles(seriesId int) ([]web.SonarrEpisodeFile, error) {
 	return m.getAllEpisodeFiles(seriesId)
 }
@@ -37,7 +36,7 @@ func (m MockSonarr) GetAllSeries() ([]web.Series, error) {
 func TestErrorFromTVScanner(t *testing.T) {
 
 	mockErr := errors.New("mock Error")
-	mockClient :=  MockSonarr{}
+	mockClient := MockSonarr{}
 	mockClient.getAllSeries = func() (series []web.Series, e error) {
 		return nil, mockErr
 	}

@@ -25,10 +25,9 @@ type RadarrClientImpl struct {
 
 func GetRadarrClient() RadarrClient {
 	return RadarrClientImpl{
-		webClient:utils.GetWebClient(),
+		webClient: utils.GetWebClient(),
 	}
 }
-
 
 func radarrGetRequest(client utils.WebClient, path string, query url.Values) (*http.Response, []byte, error) {
 	query.Add("apikey", config.GetConfig().RadarrApiKey)
@@ -98,7 +97,6 @@ func (c RadarrClientImpl) LookupMovie(id int64) (*RadarrMovie, error) {
 
 	resp, body, err := radarrGetRequest(utils.WebClientImpl{}, fmt.Sprintf("/api/movie/%d", id), url.Values{})
 
-
 	if err != nil {
 		return nil, err
 	}
@@ -167,4 +165,3 @@ func (c RadarrClientImpl) GetMovieFilePath(id int64) (string, error) {
 
 	return "", nil
 }
-

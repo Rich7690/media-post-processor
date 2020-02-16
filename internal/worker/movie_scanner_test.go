@@ -8,19 +8,19 @@ import (
 	"testing"
 )
 
-func (c MockRadarr) CheckRadarrCommand (id int) (*web.RadarrCommand, error) {
+func (c MockRadarr) CheckRadarrCommand(id int) (*web.RadarrCommand, error) {
 	return c.checkRadarrCommand(id)
 }
-func (c MockRadarr) RescanMovie (id int64) (*web.RadarrCommand, error) {
+func (c MockRadarr) RescanMovie(id int64) (*web.RadarrCommand, error) {
 	return c.rescanMovie(id)
 }
-func (c MockRadarr) LookupMovie (id int64) (*web.RadarrMovie, error) {
+func (c MockRadarr) LookupMovie(id int64) (*web.RadarrMovie, error) {
 	return c.lookupMovie(id)
 }
-func (c MockRadarr) GetAllMovies () ([]web.RadarrMovie, error) {
+func (c MockRadarr) GetAllMovies() ([]web.RadarrMovie, error) {
 	return c.getAllMovies()
 }
-func (c MockRadarr) GetMovieFilePath (id int64) (string, error) {
+func (c MockRadarr) GetMovieFilePath(id int64) (string, error) {
 	return c.getMovieFilePath(id)
 }
 
@@ -95,7 +95,7 @@ func TestSkipsIfAlreadyRightFormat(t *testing.T) {
 	mockClient := MockRadarr{}
 	mockClient.getAllMovies = func() (movies []web.RadarrMovie, e error) {
 		movieList := make([]web.RadarrMovie, 1)
-		movieList = append(movies, web.RadarrMovie{Downloaded: true, MovieFile: web.MovieFile{RelativePath:"test.mp4"}})
+		movieList = append(movies, web.RadarrMovie{Downloaded: true, MovieFile: web.MovieFile{RelativePath: "test.mp4"}})
 		return movieList, nil
 	}
 	err := ScanForMovies(mockClient, struct {
@@ -120,7 +120,7 @@ func TestEnqueueIfProperFormat(t *testing.T) {
 	mockClient := MockRadarr{}
 	mockClient.getAllMovies = func() (movies []web.RadarrMovie, e error) {
 		movieList := make([]web.RadarrMovie, 1)
-		movieList = append(movies, web.RadarrMovie{Downloaded: true, MovieFile: web.MovieFile{RelativePath:"test.mkv"}})
+		movieList = append(movies, web.RadarrMovie{Downloaded: true, MovieFile: web.MovieFile{RelativePath: "test.mkv"}})
 		return movieList, nil
 	}
 	err := ScanForMovies(mockClient, struct {
@@ -145,7 +145,7 @@ func TestEnqueueAndIgnoresEnqueueError(t *testing.T) {
 	mockClient := MockRadarr{}
 	mockClient.getAllMovies = func() (movies []web.RadarrMovie, e error) {
 		movieList := make([]web.RadarrMovie, 1)
-		movieList = append(movies, web.RadarrMovie{Downloaded: true, MovieFile: web.MovieFile{RelativePath:"test.mkv"}})
+		movieList = append(movies, web.RadarrMovie{Downloaded: true, MovieFile: web.MovieFile{RelativePath: "test.mkv"}})
 		return movieList, nil
 	}
 	err := ScanForMovies(mockClient, struct {

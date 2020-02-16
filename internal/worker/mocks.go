@@ -13,8 +13,8 @@ type MockSonarr struct {
 
 type MockRadarr struct {
 	checkRadarrCommand func(id int) (*web.RadarrCommand, error)
-	rescanMovie func(id int64) (*web.RadarrCommand, error)
-	lookupMovie func(id int64) (*web.RadarrMovie, error)
-	getAllMovies func() ([]web.RadarrMovie, error)
-	getMovieFilePath func(id int64) (string, error)
+	rescanMovie        func(id int64) (*web.RadarrCommand, error)
+	lookupMovie        func(id int64) (*web.RadarrMovie, error)
+	getAllMovies       func() ([]web.RadarrMovie, error)
+	getMovieFilePath   func(id int64) (string, error)
 }

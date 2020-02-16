@@ -16,7 +16,7 @@ func TestRadarrRescanSeriesErrorReturns(t *testing.T) {
 		return nil, errors.New("test error")
 	}
 	context := WorkerContext{
-		RadarrClient:  mockClient,
+		RadarrClient: mockClient,
 	}
 
 	err := context.UpdateMovie(&work.Job{Args: map[string]interface{}{constants.SeriesIdKey: 1}})
@@ -29,16 +29,16 @@ func TestRadarrRescanNoErrorOnNonCompleteAfterAllTries(t *testing.T) {
 	callRescan := false
 	mockClient.rescanMovie = func(id int64) (*web.RadarrCommand, error) {
 		callRescan = true
-		return &web.RadarrCommand{ID:1}, nil
+		return &web.RadarrCommand{ID: 1}, nil
 	}
 	callCheck := false
 	mockClient.checkRadarrCommand = func(id int) (*web.RadarrCommand, error) {
 		callCheck = true
-		return &web.RadarrCommand{ID:1, State:""}, nil
+		return &web.RadarrCommand{ID: 1, State: ""}, nil
 	}
 	context := WorkerContext{
-		RadarrClient:  mockClient,
-		Sleep: func(d time.Duration) {},
+		RadarrClient: mockClient,
+		Sleep:        func(d time.Duration) {},
 	}
 
 	err := context.UpdateMovie(&work.Job{Args: map[string]interface{}{constants.MovieIdKey: 1}})
@@ -53,16 +53,16 @@ func TestRadarrRescanNoErrorOnComplete(t *testing.T) {
 	callRescan := false
 	mockClient.rescanMovie = func(id int64) (*web.RadarrCommand, error) {
 		callRescan = true
-		return &web.RadarrCommand{ID:1}, nil
+		return &web.RadarrCommand{ID: 1}, nil
 	}
 	callCheck := false
 	mockClient.checkRadarrCommand = func(id int) (*web.RadarrCommand, error) {
 		callCheck = true
-		return &web.RadarrCommand{ID:1, State:"complete"}, nil
+		return &web.RadarrCommand{ID: 1, State: "complete"}, nil
 	}
 	context := WorkerContext{
-		RadarrClient:  mockClient,
-		Sleep: func(d time.Duration) {},
+		RadarrClient: mockClient,
+		Sleep:        func(d time.Duration) {},
 	}
 
 	err := context.UpdateMovie(&work.Job{Args: map[string]interface{}{constants.MovieIdKey: 1}})
@@ -77,16 +77,16 @@ func TestRadarrRescanNoErrorCheckCommand(t *testing.T) {
 	callRescan := false
 	mockClient.rescanMovie = func(id int64) (*web.RadarrCommand, error) {
 		callRescan = true
-		return &web.RadarrCommand{ID:1}, nil
+		return &web.RadarrCommand{ID: 1}, nil
 	}
 	callCheck := false
 	mockClient.checkRadarrCommand = func(id int) (*web.RadarrCommand, error) {
 		callCheck = true
-		return &web.RadarrCommand{ID:1, State:""}, errors.New("test error")
+		return &web.RadarrCommand{ID: 1, State: ""}, errors.New("test error")
 	}
 	context := WorkerContext{
-		RadarrClient:  mockClient,
-		Sleep: func(d time.Duration) {},
+		RadarrClient: mockClient,
+		Sleep:        func(d time.Duration) {},
 	}
 
 	err := context.UpdateMovie(&work.Job{Args: map[string]interface{}{constants.MovieIdKey: 1}})

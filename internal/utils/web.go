@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-type WebClient interface{
+type WebClient interface {
 	MakeGetRequest(url url.URL, path string, values url.Values) (*http.Response, []byte, error)
 	MakePostRequest(url url.URL, path string, values url.Values, body interface{}) (*http.Response, []byte, error)
 }
@@ -21,7 +21,7 @@ type WebClientImpl struct {
 }
 
 func GetWebClient() WebClient {
-	return WebClientImpl{client:netClient}
+	return WebClientImpl{client: netClient}
 }
 
 func (c WebClientImpl) MakeGetRequest(url url.URL, path string, values url.Values) (*http.Response, []byte, error) {
@@ -48,7 +48,7 @@ func makePostRequest(url url.URL, path string, values url.Values, body interface
 	url.RawPath = finalPath
 	url.Path = finalPath
 	currentValues := url.Query()
-	for k,v := range values {
+	for k, v := range values {
 		for _, value := range v {
 			currentValues.Add(k, value)
 		}
@@ -72,7 +72,7 @@ func makeGetRequest(url url.URL, path string, values url.Values) (*http.Response
 	url.RawPath = finalPath
 	url.Path = finalPath
 	currentValues := url.Query()
-	for k,v := range values {
+	for k, v := range values {
 		for _, value := range v {
 			currentValues.Add(k, value)
 		}
