@@ -10,6 +10,7 @@ import (
 	"media-web/internal/config"
 	"media-web/internal/constants"
 	"media-web/internal/utils"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -69,7 +70,9 @@ func (c *WorkerContext) TranscodeJobHandler(job *work.Job) error {
 		log.Error().Err(err).Msg("Error getting input file path")
 		return err
 	}
-	inputFilePath = "/Users/unknowndev/Downloads/test.mkv.bak"
+	if constants.IsLocal {
+		inputFilePath = "/Users/unknowndev/Downloads/test.mkv"
+	}
 
 	if inputFilePath != "" {
 		log.Info().Msg("Working on transcode at path: " + inputFilePath)
@@ -145,7 +148,9 @@ func (c *WorkerContext) TranscodeJobHandler(job *work.Job) error {
 
 	log.Info().Msg("Deleting old file")
 
-	//err = os.Remove(inputFilePath)
+	if !constants.IsLocal {
+		err = os.Remove(inputFilePath)
+	}
 
 	if err != nil {
 		log.Error().Err(err).Msg("Error deleting old file")
