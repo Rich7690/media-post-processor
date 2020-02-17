@@ -3,8 +3,9 @@ on:
   push:
     branches:
       - master
-    paths-ignore:
-      - 'README.md'
+    paths:
+      - 'go.mod'
+      - 'go.sum'
 jobs:
   security:
     runs-on: ubuntu-latest

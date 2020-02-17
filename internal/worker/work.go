@@ -9,7 +9,6 @@ import (
 	"media-web/internal/storage"
 	"media-web/internal/web"
 	"os"
-	"os/signal"
 	"time"
 )
 
@@ -85,7 +84,7 @@ func (w WorkerPoolImpl) Stop() {
 	w.pool.Stop()
 }
 
-func StartWorkerPool(context WorkerContext, factory WorkerPoolFactory) {
+func StartWorkerPool(context WorkerContext, factory WorkerPoolFactory, stopChan <-chan os.Signal) {
 	log.Info().Msg("Starting worker pool")
 	pool := factory.NewWorkerPool(context, 20, config.GetConfig().JobQueueNamespace, &storage.RedisPool)
 	pool.Middleware(context.Log)
@@ -114,10 +113,7 @@ func StartWorkerPool(context WorkerContext, factory WorkerPoolFactory) {
 	// Start processing jobs
 	pool.Start()
 
-	// Wait for a signal to quit:
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt, os.Kill)
-	<-signalChan
+	<-stopChan
 
 	// Stop the pool
 	pool.Stop()

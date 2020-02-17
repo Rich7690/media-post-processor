@@ -41,7 +41,10 @@ func (w errorWriter) Write(p []byte) (n int, err error) {
 
 func startWorker() {
 	log.Info().Msg("Starting worker.")
-	worker.StartWorkerPool(worker.GetWorkerContext(), worker.WorkerPoolFactoryImpl{})
+	// Wait for a signal to quit:
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt, os.Kill)
+	worker.StartWorkerPool(worker.GetWorkerContext(), worker.WorkerPoolFactoryImpl{}, signalChan)
 }
 
 func startSonarrScanner() {
