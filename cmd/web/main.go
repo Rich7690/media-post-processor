@@ -112,10 +112,11 @@ func startWebserver() {
 
 func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
-	log.Logger = log.Level(zerolog.DebugLevel).With().Timestamp().Logger()
+	zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	log.Logger = log.With().Timestamp().Logger()
 
 	if config.GetConfig().EnablePrettyLog {
-		log.Logger = log.Level(zerolog.DebugLevel).Output(zerolog.ConsoleWriter{Out: os.Stdout})
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout})
 	}
 
 	go startWebserver()

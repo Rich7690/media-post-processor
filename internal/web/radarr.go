@@ -21,26 +21,36 @@ type RadarrClient interface {
 
 type RadarrClientImpl struct {
 	webClient utils.WebClient
+	RadarrBaseEndpoint url.URL
 }
 
 func GetRadarrClient() RadarrClient {
+	var endpoint url.URL
+	if config.GetConfig().RadarrBaseEndpoint != nil {
+		endpoint = *config.GetConfig().RadarrBaseEndpoint
+	}
 	return RadarrClientImpl{
 		webClient: utils.GetWebClient(),
+		RadarrBaseEndpoint: endpoint,
 	}
 }
 
-func radarrGetRequest(client utils.WebClient, path string, query url.Values) (*http.Response, []byte, error) {
+func (c RadarrClientImpl) radarrGetRequest(client utils.WebClient, path string, query url.Values) (*http.Response, []byte, error) {
 	query.Add("apikey", config.GetConfig().RadarrApiKey)
-	return client.MakeGetRequest(*config.GetConfig().RadarrBaseEndpoint, path, query)
+	return client.MakeGetRequest(c.RadarrBaseEndpoint, path, query)
 }
 
-func radarrPostRequest(client utils.WebClient, path string, query url.Values, body interface{}) (*http.Response, []byte, error) {
+func (c RadarrClientImpl) radarrPostRequest(client utils.WebClient, path string, query url.Values, body interface{}) (*http.Response, []byte, error) {
 	query.Add("apikey", config.GetConfig().RadarrApiKey)
-	return client.MakePostRequest(*config.GetConfig().RadarrBaseEndpoint, path, query, body)
+	resp, repBody, err := client.MakePostRequest(c.RadarrBaseEndpoint, path, query, body)
+	if resp != nil && resp.StatusCode >= 300 {
+		return resp, repBody, errors.New("got non-200 status code")
+	}
+	return resp, repBody, err
 }
 
 func (c RadarrClientImpl) CheckRadarrCommand(id int) (*RadarrCommand, error) {
-	resp, body, err := radarrGetRequest(c.webClient, fmt.Sprintf("/api/command/%d", id), url.Values{})
+	resp, body, err := c.radarrGetRequest(c.webClient, fmt.Sprintf("/api/command/%d", id), url.Values{})
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +79,7 @@ func (c RadarrClientImpl) RescanMovie(id int64) (*RadarrCommand, error) {
 	payload["name"] = "RescanMovie"
 	payload["movieId"] = id
 
-	resp, value, err := radarrPostRequest(utils.WebClientImpl{}, "/api/command/", url.Values{}, payload)
+	resp, value, err := c.radarrPostRequest(utils.WebClientImpl{}, "/api/command/", url.Values{}, payload)
 
 	if err != nil {
 		log.Error().Err(err).Msg("Error rescanning movie")
@@ -95,7 +105,7 @@ func (c RadarrClientImpl) RescanMovie(id int64) (*RadarrCommand, error) {
 
 func (c RadarrClientImpl) LookupMovie(id int64) (*RadarrMovie, error) {
 
-	resp, body, err := radarrGetRequest(utils.WebClientImpl{}, fmt.Sprintf("/api/movie/%d", id), url.Values{})
+	resp, body, err := c.radarrGetRequest(utils.WebClientImpl{}, fmt.Sprintf("/api/movie/%d", id), url.Values{})
 
 	if err != nil {
 		return nil, err
@@ -123,8 +133,8 @@ func (c RadarrClientImpl) LookupMovie(id int64) (*RadarrMovie, error) {
 }
 
 func (c RadarrClientImpl) GetAllMovies() ([]RadarrMovie, error) {
-	response := make([]RadarrMovie, 1)
-	resp, body, err := radarrGetRequest(utils.WebClientImpl{}, "/api/movie/", url.Values{})
+	response := make([]RadarrMovie, 0)
+	resp, body, err := c.radarrGetRequest(utils.WebClientImpl{}, "/api/movie/", url.Values{})
 
 	if err != nil {
 		return nil, err

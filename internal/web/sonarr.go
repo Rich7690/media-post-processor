@@ -23,19 +23,36 @@ type SonarrClient interface {
 
 type SonarrClientImpl struct {
 	webClient utils.WebClient
+	BaseSonarrEndpoint url.URL
 }
 
 func GetSonarrClient() SonarrClient {
+	var endpoint url.URL
+	if config.GetConfig().SonarrBaseEndpoint != nil {
+		endpoint = *config.GetConfig().SonarrBaseEndpoint
+	}
 	return SonarrClientImpl{
 		webClient: utils.GetWebClient(),
+		BaseSonarrEndpoint: endpoint,
 	}
 }
 
+
+func (c SonarrClientImpl) sonarrGetRequest( path string, query url.Values) (*http.Response, []byte, error) {
+	query.Add("apikey", config.GetConfig().SonarrApiKey)
+	return c.webClient.MakeGetRequest(c.BaseSonarrEndpoint, path, query)
+}
+
+func (c SonarrClientImpl) sonarrPostRequest(path string, query url.Values, body interface{}) (*http.Response, []byte, error) {
+	query.Add("apikey", config.GetConfig().SonarrApiKey)
+	return c.webClient.MakePostRequest(c.BaseSonarrEndpoint, path, query, body)
+}
+
 func (c SonarrClientImpl) GetAllEpisodeFiles(seriesId int) ([]SonarrEpisodeFile, error) {
-	response := make([]SonarrEpisodeFile, 1)
+	response := make([]SonarrEpisodeFile, 0)
 	vals := url.Values{}
 	vals.Add("seriesId", strconv.Itoa(seriesId))
-	resp, body, err := sonarrGetRequest(c.webClient, "/api/episodeFile", vals)
+	resp, body, err := c.sonarrGetRequest( "/api/episodeFile", vals)
 
 	if err != nil {
 		return nil, err
@@ -62,19 +79,9 @@ func (c SonarrClientImpl) GetAllEpisodeFiles(seriesId int) ([]SonarrEpisodeFile,
 	}
 }
 
-func sonarrGetRequest(client utils.WebClient, path string, query url.Values) (*http.Response, []byte, error) {
-	query.Add("apikey", config.GetConfig().SonarrApiKey)
-	return client.MakeGetRequest(*config.GetConfig().SonarrBaseEndpoint, path, query)
-}
-
-func sonarrPostRequest(client utils.WebClient, path string, query url.Values, body interface{}) (*http.Response, []byte, error) {
-	query.Add("apikey", config.GetConfig().SonarrApiKey)
-	return client.MakePostRequest(*config.GetConfig().SonarrBaseEndpoint, path, query, body)
-}
-
 func (c SonarrClientImpl) GetAllSeries() ([]Series, error) {
-	response := make([]Series, 1)
-	resp, body, err := sonarrGetRequest(c.webClient, "/api/series/", url.Values{})
+	response := make([]Series, 0)
+	resp, body, err := c.sonarrGetRequest( "/api/series/", url.Values{})
 
 	if err != nil {
 		return nil, err
@@ -102,7 +109,7 @@ func (c SonarrClientImpl) GetAllSeries() ([]Series, error) {
 }
 
 func (c SonarrClientImpl) CheckSonarrCommand(id int) (*SonarrCommand, error) {
-	resp, body, err := sonarrGetRequest(c.webClient, fmt.Sprintf("/api/command/%d", id), url.Values{})
+	resp, body, err := c.sonarrGetRequest(fmt.Sprintf("/api/command/%d", id), url.Values{})
 
 	if err != nil {
 		return nil, err
@@ -132,7 +139,7 @@ func (c SonarrClientImpl) RescanSeries(id int64) (*SonarrCommand, error) {
 	payload["name"] = "RescanSeries"
 	payload["seriesId"] = id
 
-	resp, body, err := sonarrPostRequest(c.webClient, "/api/command", url.Values{}, payload)
+	resp, body, err := c.sonarrPostRequest( "/api/command", url.Values{}, payload)
 
 	if err != nil {
 		return nil, err
@@ -156,7 +163,7 @@ func (c SonarrClientImpl) RescanSeries(id int64) (*SonarrCommand, error) {
 }
 
 func (c SonarrClientImpl) LookupTVEpisode(id int64) (*SonarrEpisodeFile, error) {
-	resp, body, err := sonarrGetRequest(c.webClient, fmt.Sprintf("/api/episodeFile/%d", id), url.Values{})
+	resp, body, err := c.sonarrGetRequest(fmt.Sprintf("/api/episodeFile/%d", id), url.Values{})
 
 	if err != nil {
 		return nil, err

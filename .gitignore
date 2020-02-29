@@ -17,3 +17,4 @@
 main
 /bin/build-copy.sh
 test.db
+.env
