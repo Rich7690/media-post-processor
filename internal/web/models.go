@@ -112,13 +112,15 @@ type JobData struct {
 	Id            int                     `json:"id"`
 }
 
+type Movie struct {
+	ID          int    `json:"id"`
+	Title       string `json:"title"`
+	ReleaseDate string `json:"releaseDate"`
+}
+
 type RadarrWebhook struct {
-	EventType string `json:"eventType"`
-	Movie     struct {
-		ID          int    `json:"id"`
-		Title       string `json:"title"`
-		ReleaseDate string `json:"releaseDate"`
-	} `json:"movie"`
+	EventType   string `json:"eventType"`
+	Movie       Movie  `json:"movie"`
 	RemoteMovie struct {
 		TmdbID int    `json:"tmdbId"`
 		ImdbID string `json:"imdbId"`
