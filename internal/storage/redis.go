@@ -1,9 +1,10 @@
 package storage
 
 import (
-	"github.com/gomodule/redigo/redis"
 	"media-web/internal/config"
 	"time"
+
+	"github.com/gomodule/redigo/redis"
 )
 
 // Make a redis pool

@@ -2,12 +2,13 @@ package worker
 
 import (
 	"errors"
-	"github.com/gocraft/work"
-	"github.com/stretchr/testify/assert"
 	"media-web/internal/constants"
 	"media-web/internal/web"
 	"testing"
 	"time"
+
+	"github.com/gocraft/work"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRescanSeriesErrorReturns(t *testing.T) {

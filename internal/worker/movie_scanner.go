@@ -1,16 +1,31 @@
 package worker
 
 import (
-	"github.com/gocraft/work"
-	"github.com/rs/zerolog/log"
 	"media-web/internal/constants"
 	"media-web/internal/web"
 	"path/filepath"
+
+	"github.com/gocraft/work"
+	"github.com/rs/zerolog/log"
 )
 
-func ScanForMovies(client web.RadarrClient, scheduler WorkScheduler) error {
+// MovieScanner scans for movies to be converted into a consistent format
+type MovieScanner interface {
+	ScanForMovies() error
+}
 
-	movies, err := client.GetAllMovies()
+type movieScannerImpl struct {
+	client    web.RadarrClient
+	scheduler WorkScheduler
+}
+
+// NewMovieScanner creates a new instance of MovieScanner
+func NewMovieScanner(client web.RadarrClient, scheduler WorkScheduler) MovieScanner {
+	return movieScannerImpl{client: client, scheduler: scheduler}
+}
+
+func (m movieScannerImpl) ScanForMovies() error {
+	movies, err := m.client.GetAllMovies()
 
 	if err != nil {
 		return err
@@ -23,7 +38,7 @@ func ScanForMovies(client web.RadarrClient, scheduler WorkScheduler) error {
 
 			if ext != ".mp4" {
 				log.Debug().Msg("Found movie in wrong format: " + movie.MovieFile.RelativePath)
-				_, err := scheduler.EnqueueUnique(constants.TranscodeJobType, work.Q{
+				_, err := m.scheduler.EnqueueUnique(constants.TranscodeJobType, work.Q{
 					constants.TranscodeTypeKey: constants.Movie,
 					constants.MovieIdKey:       movie.ID,
 				})

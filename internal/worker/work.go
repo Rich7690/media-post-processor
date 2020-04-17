@@ -1,15 +1,16 @@
 package worker
 
 import (
-	"github.com/gocraft/work"
-	"github.com/gomodule/redigo/redis"
-	"github.com/rs/zerolog/log"
 	"media-web/internal/config"
 	"media-web/internal/constants"
 	"media-web/internal/storage"
 	"media-web/internal/web"
 	"os"
 	"time"
+
+	"github.com/gocraft/work"
+	"github.com/gomodule/redigo/redis"
+	"github.com/rs/zerolog/log"
 )
 
 type WorkerContext struct {
@@ -20,15 +21,13 @@ type WorkerContext struct {
 	Sleep         func(d time.Duration)
 }
 
-type WorkScheduler struct {
-	EnqueueUnique func(jobName string, args map[string]interface{}) (*work.Job, error)
+type WorkScheduler interface {
+	EnqueueUnique(jobName string, args map[string]interface{}) (*work.Job, error)
 }
 
 var worker = work.NewEnqueuer(config.GetConfig().JobQueueNamespace, &storage.RedisPool)
 
-var Enqueuer = WorkScheduler{
-	EnqueueUnique: worker.EnqueueUnique,
-}
+var Enqueuer = worker
 
 func (c *WorkerContext) Log(job *work.Job, next work.NextMiddlewareFunc) error {
 	log.Info().Str("jobId", job.ID).Msg("Starting job: " + job.ID)
@@ -86,6 +85,8 @@ func (w WorkerPoolImpl) Stop() {
 
 func StartWorkerPool(context WorkerContext, factory WorkerPoolFactory, stopChan <-chan os.Signal) {
 	log.Info().Msg("Starting worker pool")
+	// Note: normally the worker context isn't shared and would be unique per job
+	// However, here we use it as a mechanism to inject dependencies into the job handler
 	pool := factory.NewWorkerPool(context, 20, config.GetConfig().JobQueueNamespace, &storage.RedisPool)
 	pool.Middleware(context.Log)
 

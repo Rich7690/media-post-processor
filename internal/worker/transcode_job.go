@@ -2,11 +2,6 @@ package worker
 
 import (
 	"fmt"
-	"github.com/gocraft/work"
-	"github.com/rs/zerolog/log"
-	"github.com/xfrr/goffmpeg/ffmpeg"
-	"github.com/xfrr/goffmpeg/models"
-	"github.com/xfrr/goffmpeg/transcoder"
 	"media-web/internal/config"
 	"media-web/internal/constants"
 	"media-web/internal/utils"
@@ -14,35 +9,29 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/gocraft/work"
+	"github.com/rs/zerolog/log"
+	"github.com/xfrr/goffmpeg/ffmpeg"
+	"github.com/xfrr/goffmpeg/models"
+	"github.com/xfrr/goffmpeg/transcoder"
 )
 
-type Transcoder struct {
-	SetConfiguration func(config ffmpeg.Configuration)
-	Initialize       func(input string, output string) error
-	MediaFile        func() *models.Mediafile
-	Output           func() <-chan models.Progress
-	Run              func(progress bool) <-chan error
+type Transcoder interface {
+	SetConfiguration(config ffmpeg.Configuration)
+	Initialize(input string, output string) error
+	MediaFile() *models.Mediafile
+	Output() <-chan models.Progress
+	Run(progress bool) <-chan error
 }
 
 func GetTranscoder() Transcoder {
 	trans := transcoder.Transcoder{}
-	return Transcoder{
-		SetConfiguration: func(config ffmpeg.Configuration) {
-			trans.SetConfiguration(config)
-		},
-		Initialize: func(input string, output string) error {
-			return trans.Initialize(input, output)
-		},
-		MediaFile: func() *models.Mediafile {
-			return trans.MediaFile()
-		},
-		Output: func() <-chan models.Progress {
-			return trans.Output()
-		},
-		Run: func(progress bool) <-chan error {
-			return trans.Run(progress)
-		},
-	}
+	return &trans
+}
+
+func (c *WorkerContext) TranscodeTVShow() {
+
 }
 
 func (c *WorkerContext) TranscodeJobHandler(job *work.Job) error {

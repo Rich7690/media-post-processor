@@ -2,12 +2,13 @@ package worker
 
 import (
 	"fmt"
-	"github.com/gocraft/work"
-	"github.com/gomodule/redigo/redis"
-	"github.com/stretchr/testify/assert"
 	"media-web/internal/constants"
 	"os"
 	"testing"
+
+	"github.com/gocraft/work"
+	"github.com/gomodule/redigo/redis"
+	"github.com/stretchr/testify/assert"
 )
 
 type MockWorkerPoolFactory struct {

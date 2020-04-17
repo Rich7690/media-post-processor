@@ -2,11 +2,11 @@ package worker
 
 import (
 	"errors"
-	"github.com/gocraft/work"
-	"github.com/stretchr/testify/assert"
 	"media-web/internal/constants"
 	"media-web/internal/web"
 	"testing"
+
+	"gopkg.in/go-playground/assert.v1"
 )
 
 func (m MockSonarr) GetAllEpisodeFiles(seriesId int) ([]web.SonarrEpisodeFile, error) {
@@ -41,7 +41,9 @@ func TestErrorFromTVScanner(t *testing.T) {
 		return nil, mockErr
 	}
 	// We'd fail with pointer errors if we called anything on here
-	ScanForTVShows(mockClient, WorkScheduler{})
+	w := mockWorker{}
+	ScanForTVShows(mockClient, w)
+	w.AssertExpectations(t)
 }
 
 func TestSkipIfUnmatchedExtension(t *testing.T) {
@@ -56,7 +58,7 @@ func TestSkipIfUnmatchedExtension(t *testing.T) {
 		Path: "test.mkv",
 		ID:   2,
 	})
-	inputSeries := -1
+	var inputSeries = -1
 	mockClient := MockSonarr{
 		getAllSeries: func() ([]web.Series, error) {
 			return mockSeries, nil
@@ -66,20 +68,12 @@ func TestSkipIfUnmatchedExtension(t *testing.T) {
 			return episodes, nil
 		},
 	}
-	inputJob := ""
-	var inputArgs map[string]interface{}
-	mockScheduler := WorkScheduler{
-		EnqueueUnique: func(jobName string, args map[string]interface{}) (job *work.Job, e error) {
-			inputJob = jobName
-			inputArgs = args
-			return nil, nil
-		}}
-	ScanForTVShows(mockClient, mockScheduler)
-
-	assert.EqualValues(t, constants.TranscodeJobType, inputJob)
-	assert.EqualValues(t, 1, inputSeries)
-	assert.EqualValues(t, work.Q{
+	w := mockWorker{}
+	w.On("EnqueueUnique", constants.TranscodeJobType, map[string]interface{}{
 		constants.TranscodeTypeKey: constants.TV,
 		constants.EpisodeFileIdKey: 2,
-	}, inputArgs)
+	}).Once().Return(nil, nil)
+	ScanForTVShows(mockClient, w)
+	assert.Equal(t, 1, inputSeries)
+	w.AssertExpectations(t)
 }

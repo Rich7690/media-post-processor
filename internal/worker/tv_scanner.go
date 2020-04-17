@@ -1,11 +1,12 @@
 package worker
 
 import (
-	"github.com/gocraft/work"
-	"github.com/rs/zerolog/log"
 	"media-web/internal/constants"
 	"media-web/internal/web"
 	"path/filepath"
+
+	"github.com/gocraft/work"
+	"github.com/rs/zerolog/log"
 )
 
 func ScanForTVShows(sonarrClient web.SonarrClient, scheduler WorkScheduler) {

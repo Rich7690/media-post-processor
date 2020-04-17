@@ -1,10 +1,11 @@
 package config
 
 import (
-	"github.com/caarlos0/env/v6"
-	"github.com/rs/zerolog/log"
 	"net/url"
 	"reflect"
+
+	"github.com/caarlos0/env/v6"
+	"github.com/rs/zerolog/log"
 )
 
 type Config struct {

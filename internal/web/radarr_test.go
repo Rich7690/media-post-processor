@@ -3,12 +3,13 @@ package web
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"media-web/internal/utils"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRescanMovieReturnsSuccess(t *testing.T) {
@@ -35,9 +36,9 @@ func TestRescanMovieReturnsSuccess(t *testing.T) {
 		webClient:          utils.GetWebClient(),
 		RadarrBaseEndpoint: *parsed,
 	}
-	
+
 	cmd, err := client.RescanMovie(1)
-	
+
 	assert.NoError(t, err)
 	assert.Equal(t, 1, cmd.ID)
 }
@@ -75,7 +76,7 @@ func TestLookupMovieReturnsSuccess(t *testing.T) {
 		assert.Equal(t, fmt.Sprintf("/api/movie/%d", 1), r.URL.Path)
 		assert.Contains(t, r.URL.RawQuery, "apikey=")
 		cmd := RadarrMovie{
-			ID:    1,
+			ID: 1,
 		}
 		json.NewEncoder(w).Encode(&cmd)
 	}))
@@ -100,7 +101,7 @@ func TestGetAllMoviesReturnsSuccess(t *testing.T) {
 		assert.Equal(t, "/api/movie", r.URL.Path)
 		assert.Contains(t, r.URL.RawQuery, "apikey=")
 		cmd := RadarrMovie{
-			ID:    1,
+			ID: 1,
 		}
 		mvs := []RadarrMovie{cmd}
 		json.NewEncoder(w).Encode(&mvs)

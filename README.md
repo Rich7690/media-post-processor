@@ -56,4 +56,4 @@ Radarr or Sonarr should then be configured on the Connect section as follows:
 You can do a `docker logs -f web` to validate that is receiving requests correctly.
 
 ### Non-Docker
-Currently, I don't cross-compile builds for native setups, but if you prefer to run apps on your OS directly, you should be able to just compile with `go build ./...` once you have installed golang 1.13 or above on that OS. You then can setup the binary yourself.
+Currently, I don't cross-compile builds for native setups, but if you prefer to run apps on your OS directly, you should be able to just compile with `go build ./...` once you have installed golang 1.14 or above on that OS. You then can setup the binary yourself.

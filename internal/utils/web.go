@@ -3,21 +3,65 @@ package utils
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/rs/zerolog/log"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	path2 "path"
+	"strconv"
 	"time"
+
+	"github.com/rs/zerolog/log"
+)
+
+var (
+	NotFoundError = errors.New("http status not found returned")
 )
 
 type WebClient interface {
+	GetRequest(url url.URL, path string, values url.Values, respObject interface{}) error
+	PostRequest(url url.URL, path string, values url.Values, body interface{}, respObject interface{}) error
 	MakeGetRequest(url url.URL, path string, values url.Values) (*http.Response, []byte, error)
 	MakePostRequest(url url.URL, path string, values url.Values, body interface{}) (*http.Response, []byte, error)
 }
 
 type WebClientImpl struct {
 	client http.Client
+}
+
+func (c WebClientImpl) PostRequest(url url.URL, path string, values url.Values, body interface{}, respObject interface{}) error {
+	resp, respBytes, err := makePostRequest(url, path, values, body)
+
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode >= http.StatusBadRequest {
+		return errors.New("bad status code from server: " + strconv.Itoa(resp.StatusCode))
+	}
+	if respObject != nil {
+		err = json.Unmarshal(respBytes, respObject)
+	}
+
+	return err
+}
+
+func (c WebClientImpl) GetRequest(url url.URL, path string, values url.Values, respObject interface{}) error {
+	resp, body, err := makeGetRequest(url, path, values)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode == http.StatusNotFound {
+		return NotFoundError
+	}
+	if resp.StatusCode >= http.StatusBadRequest {
+		return errors.New("bad status code from server: " + strconv.Itoa(resp.StatusCode))
+	}
+	if respObject != nil {
+		err = json.Unmarshal(body, respObject)
+	}
+
+	return err
 }
 
 func GetWebClient() WebClient {

@@ -1,12 +1,13 @@
 package controllers
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/gocraft/work"
-	"github.com/rs/zerolog/log"
 	"media-web/internal/constants"
 	"media-web/internal/web"
 	"media-web/internal/worker"
+
+	"github.com/gin-gonic/gin"
+	"github.com/gocraft/work"
+	"github.com/rs/zerolog/log"
 )
 
 func GetSonarrWebhookHandler(scheduler worker.WorkScheduler) func(c *gin.Context) {

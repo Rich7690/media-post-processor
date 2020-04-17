@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/rs/zerolog/log"
 	"media-web/internal/config"
 	"media-web/internal/utils"
 	"net/http"
 	"net/url"
+
+	"github.com/rs/zerolog/log"
 )
 
 type RadarrClient interface {
@@ -20,7 +21,7 @@ type RadarrClient interface {
 }
 
 type RadarrClientImpl struct {
-	webClient utils.WebClient
+	webClient          utils.WebClient
 	RadarrBaseEndpoint url.URL
 }
 
@@ -30,14 +31,14 @@ func GetRadarrClient() RadarrClient {
 		endpoint = *config.GetConfig().RadarrBaseEndpoint
 	}
 	return RadarrClientImpl{
-		webClient: utils.GetWebClient(),
+		webClient:          utils.GetWebClient(),
 		RadarrBaseEndpoint: endpoint,
 	}
 }
 
-func (c RadarrClientImpl) radarrGetRequest(client utils.WebClient, path string, query url.Values) (*http.Response, []byte, error) {
+func (c RadarrClientImpl) radarrGetRequest(client utils.WebClient, path string, query url.Values, respObject interface{}) error {
 	query.Add("apikey", config.GetConfig().RadarrApiKey)
-	return client.MakeGetRequest(c.RadarrBaseEndpoint, path, query)
+	return client.GetRequest(c.RadarrBaseEndpoint, path, query, respObject)
 }
 
 func (c RadarrClientImpl) radarrPostRequest(client utils.WebClient, path string, query url.Values, body interface{}) (*http.Response, []byte, error) {
@@ -50,26 +51,9 @@ func (c RadarrClientImpl) radarrPostRequest(client utils.WebClient, path string,
 }
 
 func (c RadarrClientImpl) CheckRadarrCommand(id int) (*RadarrCommand, error) {
-	resp, body, err := c.radarrGetRequest(c.webClient, fmt.Sprintf("/api/command/%d", id), url.Values{})
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode < 300 {
-		response := RadarrCommand{}
-		err = json.Unmarshal(body, &response)
-
-		if err != nil {
-			log.Err(err).Int("status_code", resp.StatusCode).Str("response", string(body)).Msg("Error parsing json")
-			return nil, err
-		}
-
-		return &response, nil
-
-	} else {
-		log.Err(err).Int("status_code", resp.StatusCode).Str("response", string(body)).Msg("Error calling radarr")
-		return nil, errors.New("failed to check command")
-	}
+	var response RadarrCommand
+	err := c.radarrGetRequest(c.webClient, fmt.Sprintf("/api/command/%d", id), url.Values{}, &response)
+	return &response, err
 }
 
 func (c RadarrClientImpl) RescanMovie(id int64) (*RadarrCommand, error) {
@@ -104,61 +88,23 @@ func (c RadarrClientImpl) RescanMovie(id int64) (*RadarrCommand, error) {
 }
 
 func (c RadarrClientImpl) LookupMovie(id int64) (*RadarrMovie, error) {
+	var response RadarrMovie
+	err := c.radarrGetRequest(utils.WebClientImpl{}, fmt.Sprintf("/api/movie/%d", id), url.Values{}, &response)
 
-	resp, body, err := c.radarrGetRequest(utils.WebClientImpl{}, fmt.Sprintf("/api/movie/%d", id), url.Values{})
-
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode == 404 {
+	if err == utils.NotFoundError {
 		return nil, nil
 	}
-
-	if resp.StatusCode < 300 {
-		response := RadarrMovie{}
-		err = json.Unmarshal(body, &response)
-
-		if err != nil {
-			log.Err(err).Str("response", string(body)).Msg("Error parsing json")
-			return nil, err
-		}
-
-		return &response, nil
-
-	} else {
-		log.Err(err).Int("status_code", resp.StatusCode).Str("response", string(body)).Msg("Error calling radarr")
-		return nil, errors.New("Failed find movie")
-	}
+	return &response, err
 }
 
 func (c RadarrClientImpl) GetAllMovies() ([]RadarrMovie, error) {
 	response := make([]RadarrMovie, 0)
-	resp, body, err := c.radarrGetRequest(utils.WebClientImpl{}, "/api/movie/", url.Values{})
+	err := c.radarrGetRequest(utils.WebClientImpl{}, "/api/movie/", url.Values{}, &response)
 
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode == 404 {
+	if err == utils.NotFoundError {
 		return response, nil
 	}
-
-	if resp.StatusCode < 300 {
-
-		err = json.Unmarshal(body, &response)
-
-		if err != nil {
-			log.Err(err).Str("response", string(body)).Msg("Error parsing json")
-			return nil, err
-		}
-
-		return response, nil
-
-	} else {
-		log.Err(err).Int("status_code", resp.StatusCode).Str("response", string(body)).Msg("Error calling radarr")
-		return nil, errors.New("Failed to get movies")
-	}
+	return response, err
 }
 
 func (c RadarrClientImpl) GetMovieFilePath(id int64) (string, error) {

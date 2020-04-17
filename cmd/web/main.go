@@ -1,10 +1,6 @@
 package main
 
 import (
-	"github.com/gin-contrib/static"
-	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	"media-web/internal/config"
 	"media-web/internal/controllers"
 	"media-web/internal/web"
@@ -13,6 +9,12 @@ import (
 	"os/signal"
 	"strings"
 	"time"
+
+	"github.com/gin-contrib/static"
+	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 type nullWriter struct {
@@ -69,6 +71,7 @@ func startSonarrScanner() {
 
 func startRadarrScanner() {
 	log.Info().Msg("Starting Radarr scanner")
+	scanner := worker.NewMovieScanner(web.GetRadarrClient(), worker.Enqueuer)
 	repeat := make(chan bool, 1)
 	repeat <- true // queue up first one to kick it off on start
 	for {
@@ -80,7 +83,7 @@ func startRadarrScanner() {
 		select {
 		case <-repeat:
 			log.Info().Msg("Scanning for movies in wrong format")
-			err := worker.ScanForMovies(web.GetRadarrClient(), worker.Enqueuer)
+			err := scanner.ScanForMovies()
 			log.Info().Msg("Done scanning for movies")
 			if err != nil {
 				log.Err(err).Msg("Error scanning for movies")
@@ -101,12 +104,20 @@ func startWebserver() {
 	r.GET("/health", controllers.HealthHandler)
 	r.POST("/api/radarr/webhook", controllers.GetRadarrWebhookHandler(worker.Enqueuer))
 	r.POST("/api/sonarr/webhook", controllers.GetSonarrWebhookHandler(worker.Enqueuer))
+	r.GET("/metrics", prometheusHandler())
 	//r.GET("/api/config", controllers.GetConfigHandler)
 
 	err := r.Run()
 
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to start web server")
+	}
+}
+
+func prometheusHandler() gin.HandlerFunc {
+	h := promhttp.Handler()
+	return func(c *gin.Context) {
+		h.ServeHTTP(c.Writer, c.Request)
 	}
 }
 

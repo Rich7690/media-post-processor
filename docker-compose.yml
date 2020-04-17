@@ -10,7 +10,10 @@ services:
     networks:
       - app-net
     volumes:
-      - /tmp/redis:/data
+      - redis:/data
 
 networks:
   app-net:
+
+volumes:
+  redis:

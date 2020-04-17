@@ -1,12 +1,13 @@
 package worker
 
 import (
-	"github.com/gocraft/work"
-	"github.com/rs/zerolog/log"
 	"media-web/internal/constants"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/gocraft/work"
+	"github.com/rs/zerolog/log"
 )
 
 func (c *WorkerContext) UpdateMovie(job *work.Job) error {

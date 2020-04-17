@@ -1,12 +1,12 @@
 package controllers
 
 import (
-	"github.com/gin-gonic/gin"
-	"io/ioutil"
-	"media-web/internal/helper"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestHealthHandler(t *testing.T) {
@@ -14,14 +14,8 @@ func TestHealthHandler(t *testing.T) {
 
 	r.GET("/health", HealthHandler)
 
-	req, _ := http.NewRequest("GET", "/health", nil)
-
-	helper.GetHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
-		statusOK := w.Code == http.StatusOK
-
-		_, err := ioutil.ReadAll(w.Body)
-		pageOK := err == nil
-
-		return statusOK && pageOK
-	})
+	req := httptest.NewRequest("GET", "/health", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
 }

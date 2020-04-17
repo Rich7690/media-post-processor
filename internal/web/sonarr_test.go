@@ -3,12 +3,13 @@ package web
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"media-web/internal/utils"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRescanTVReturnsSuccess(t *testing.T) {
@@ -75,7 +76,7 @@ func TestGetAllSeriesReturnsSuccess(t *testing.T) {
 		assert.Equal(t, "/api/series", r.URL.Path)
 		assert.Contains(t, r.URL.RawQuery, "apikey=")
 		cmd := Series{
-			ID:    1,
+			ID: 1,
 		}
 		mvs := []Series{cmd}
 		json.NewEncoder(w).Encode(&mvs)
@@ -102,7 +103,7 @@ func TestGetAllEpisodeFilesReturnsSuccess(t *testing.T) {
 		assert.Contains(t, r.URL.RawQuery, "apikey=")
 		assert.Equal(t, "1", r.URL.Query().Get("seriesId"))
 		cmd := SonarrEpisodeFile{
-			ID:    2,
+			ID: 2,
 		}
 		mvs := []SonarrEpisodeFile{cmd}
 		json.NewEncoder(w).Encode(&mvs)
@@ -128,7 +129,7 @@ func TestLookupTVEpisodeReturnsSuccess(t *testing.T) {
 		assert.Equal(t, fmt.Sprintf("/api/episodeFile/%d", 1), r.URL.Path)
 		assert.Contains(t, r.URL.RawQuery, "apikey=")
 		cmd := SonarrEpisodeFile{
-			ID:    1,
+			ID: 1,
 		}
 		json.NewEncoder(w).Encode(&cmd)
 	}))
