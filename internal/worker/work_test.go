@@ -1,9 +1,8 @@
 package worker
 
 import (
-	"fmt"
+	context2 "context"
 	"media-web/internal/constants"
-	"os"
 	"testing"
 
 	"github.com/gocraft/work"
@@ -44,8 +43,8 @@ func (w MockWorkerPoolFactory) NewWorkerPool(ctx interface{}, concurrency uint, 
 
 func TestWorkerPoolSetup(t *testing.T) {
 
-	stopChan := make(chan os.Signal, 1)
-	stopChan <- os.Interrupt
+	ctx, cancel := context2.WithCancel(context2.Background())
+	cancel()
 	var start = false
 	var stop = false
 	var middleware = false
@@ -54,7 +53,6 @@ func TestWorkerPoolSetup(t *testing.T) {
 		return MockWorkerPool{
 			middleware: func(fn interface{}) { middleware = true },
 			jobWithOptions: func(name string, jobOpts work.JobOptions, fn interface{}) {
-				fmt.Println(name)
 				jobs = append(jobs, name)
 			},
 			start: func() { start = true },
@@ -67,7 +65,7 @@ func TestWorkerPoolSetup(t *testing.T) {
 		return nil
 	})
 
-	StartWorkerPool(context, MockWorkerPoolFactory{makePool: makePool}, stopChan)
+	StartWorkerPool(context, MockWorkerPoolFactory{makePool: makePool}, ctx)
 
 	assert.NoError(t, err)
 	assert.True(t, start)

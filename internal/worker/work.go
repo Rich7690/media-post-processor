@@ -1,11 +1,11 @@
 package worker
 
 import (
+	"context"
 	"media-web/internal/config"
 	"media-web/internal/constants"
 	"media-web/internal/storage"
 	"media-web/internal/web"
-	"os"
 	"time"
 
 	"github.com/gocraft/work"
@@ -83,7 +83,7 @@ func (w WorkerPoolImpl) Stop() {
 	w.pool.Stop()
 }
 
-func StartWorkerPool(context WorkerContext, factory WorkerPoolFactory, stopChan <-chan os.Signal) {
+func StartWorkerPool(context WorkerContext, factory WorkerPoolFactory, ctx context.Context) {
 	log.Info().Msg("Starting worker pool")
 	// Note: normally the worker context isn't shared and would be unique per job
 	// However, here we use it as a mechanism to inject dependencies into the job handler
@@ -114,7 +114,7 @@ func StartWorkerPool(context WorkerContext, factory WorkerPoolFactory, stopChan 
 	// Start processing jobs
 	pool.Start()
 
-	<-stopChan
+	<-ctx.Done()
 
 	// Stop the pool
 	pool.Stop()

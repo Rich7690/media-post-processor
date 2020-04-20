@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"media-web/internal/config"
 	"media-web/internal/controllers"
 	"media-web/internal/web"
@@ -41,16 +42,14 @@ func (w errorWriter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-func startWorker() {
+func startWorker(ctx context.Context) {
 	log.Info().Msg("Starting worker.")
-	// Wait for a signal to quit:
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt, os.Kill)
-	worker.StartWorkerPool(worker.GetWorkerContext(), worker.WorkerPoolFactoryImpl{}, signalChan)
+	worker.StartWorkerPool(worker.GetWorkerContext(), worker.WorkerPoolFactoryImpl{}, ctx)
 }
 
-func startSonarrScanner() {
+func startSonarrScanner(ctx context.Context) {
 	log.Info().Msg("Starting Sonarr scanner")
+	time.Sleep(10 * time.Second)
 	repeat := make(chan bool, 1)
 	repeat <- true // queue up first one to kick it off on start
 	for {
@@ -65,12 +64,16 @@ func startSonarrScanner() {
 			worker.ScanForTVShows(web.GetSonarrClient(), worker.Enqueuer)
 			log.Info().Msg("Done scanning for TV shows")
 			break
+		case <-ctx.Done():
+			log.Info().Msg("Closing Sonarr scanner")
+			return
 		}
 	}
 }
 
-func startRadarrScanner() {
+func startRadarrScanner(ctx context.Context) {
 	log.Info().Msg("Starting Radarr scanner")
+	time.Sleep(10 * time.Second)
 	scanner := worker.NewMovieScanner(web.GetRadarrClient(), worker.Enqueuer)
 	repeat := make(chan bool, 1)
 	repeat <- true // queue up first one to kick it off on start
@@ -89,6 +92,9 @@ func startRadarrScanner() {
 				log.Err(err).Msg("Error scanning for movies")
 			}
 			break
+		case <-ctx.Done():
+			log.Info().Msg("Closing Radarr scanner")
+			return
 		}
 	}
 }
@@ -127,27 +133,29 @@ func main() {
 	log.Logger = log.With().Timestamp().Logger()
 
 	if config.GetConfig().EnablePrettyLog {
-		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout})
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.StampMilli})
 	}
+
+	ctx, cancel := context.WithCancel(context.Background())
 
 	go startWebserver()
 
 	if config.GetConfig().EnableWorker {
-		go startWorker()
+		go startWorker(ctx)
 	}
 
 	if config.GetConfig().EnableRadarrScanner {
-		go startRadarrScanner()
+		go startRadarrScanner(ctx)
 	}
 
 	if config.GetConfig().EnableSonarrScanner {
-		go startSonarrScanner()
+		go startSonarrScanner(ctx)
 	}
 
 	log.Debug().Msg("Waiting for exit signal")
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt, os.Kill)
 	<-signalChan
+	cancel()
 	log.Debug().Msg("Exiting.")
-	os.Exit(0)
 }
