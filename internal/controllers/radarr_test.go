@@ -79,13 +79,12 @@ func TestEnqueuesJobForValidInput(t *testing.T) {
 	m := mockWorker{}
 
 	r := gin.Default()
-	movie := web.Movie{ID:1}
+	movie := web.Movie{ID: 1}
 	body := web.RadarrWebhook{EventType: "Download", Movie: movie}
-	job := work.Job{ID:"foo"}
+	job := work.Job{ID: "foo"}
 
 	m.On("EnqueueUnique", mock.Anything, mock.Anything).Return(&job, nil)
 	r.POST("/api/radarr/webhook", GetRadarrWebhookHandler(m))
-
 
 	payload, err := json.Marshal(body)
 
