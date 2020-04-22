@@ -1,25 +1,24 @@
 package controllers
 
 import (
+	"encoding/json"
 	"media-web/internal/constants"
 	"media-web/internal/web"
 	"media-web/internal/worker"
+	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"github.com/gocraft/work"
 	"github.com/rs/zerolog/log"
 )
 
-func GetSonarrWebhookHandler(scheduler worker.WorkScheduler) func(c *gin.Context) {
-	return func(c *gin.Context) {
-		body := web.SonarrWebhook{}
-		err := c.ShouldBindJSON(&body)
+func GetSonarrWebhookHandler(scheduler worker.WorkScheduler) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var body web.SonarrWebhook
+		err := json.NewDecoder(r.Body).Decode(&body)
 
 		if err != nil {
 			log.Err(err).Msg("Failed to bind json")
-			c.JSON(400, gin.H{
-				"message": "Invalid input",
-			})
+			http.Error(w, "invalid json input", http.StatusBadRequest)
 			return
 		}
 
@@ -33,14 +32,14 @@ func GetSonarrWebhookHandler(scheduler worker.WorkScheduler) func(c *gin.Context
 
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to enqueue work")
-				c.JSON(500, gin.H{"message": "Failed to enqueue work"})
+				http.Error(w, "failed to enqueue work", http.StatusInternalServerError)
 				return
 			}
 
 			log.Info().Msgf("Enqueued job: %s", job.ID)
 			break
 		}
-
-		c.JSON(200, body)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(&body)
 	}
 }

@@ -6,13 +6,14 @@ import (
 	"media-web/internal/controllers"
 	"media-web/internal/web"
 	"media-web/internal/worker"
+	"net/http"
+	"net/http/pprof"
 	"os"
 	"os/signal"
 	"strings"
 	"time"
 
-	"github.com/gin-contrib/static"
-	"github.com/gin-gonic/gin"
+	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -99,31 +100,62 @@ func startRadarrScanner(ctx context.Context) {
 	}
 }
 
-func startWebserver() {
-	log.Info().Msg("Starting server.")
-	gin.DefaultWriter = nullWriter{}
-	gin.DefaultErrorWriter = errorWriter{}
-	r := gin.Default()
+func recoverHandler(next http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, req *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				log.Error().Interface("err", err).Str("path", req.URL.Path).Msg("Recovered from panic")
+				http.Error(w, "Unknown error", http.StatusInternalServerError)
+			}
+		}()
+		next.ServeHTTP(w, req)
+	}
+	return http.HandlerFunc(fn)
+}
 
-	r.Use(static.ServeRoot("/", "./public"))
-	r.Use(gin.Recovery())
-	r.GET("/health", controllers.HealthHandler)
-	r.POST("/api/radarr/webhook", controllers.GetRadarrWebhookHandler(worker.Enqueuer))
-	r.POST("/api/sonarr/webhook", controllers.GetSonarrWebhookHandler(worker.Enqueuer))
-	r.GET("/metrics", prometheusHandler())
+func startWebserver(ctx context.Context) {
+	log.Info().Msg("Starting server.")
+	ro := mux.NewRouter()
+
+	//r.Use(static.ServeRoot("/", "./public"))
+	ro.HandleFunc("/health", controllers.HealthHandler)
+	ro.HandleFunc("/api/radarr/webhook", controllers.GetRadarrWebhookHandler(worker.Enqueuer))
+	ro.HandleFunc("/api/sonarr/webhook", controllers.GetSonarrWebhookHandler(worker.Enqueuer)).Methods(http.MethodPost)
+	ro.Handle("/metrics", promhttp.Handler())
+	ro.HandleFunc("/debug/pprof/", pprof.Index).Methods("GET")
+	ro.HandleFunc("/debug/pprof/{name}", pprofHandler())
 	//r.GET("/api/config", controllers.GetConfigHandler)
 
-	err := r.Run()
+	serv := http.Server{
+		Addr:         ":8080",
+		Handler:      recoverHandler(http.TimeoutHandler(ro, 4*time.Second, "Failed to handle request in time")),
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 5 * time.Second,
+		IdleTimeout:  30 * time.Second,
+	}
+	go func() {
+		<- ctx.Done()
+		err := serv.Close()
+		if err != nil {
+			log.Err(err).Msg("error on server close")
+		}
+	}()
+	err := serv.ListenAndServe()
 
-	if err != nil {
+	if err != nil && err != http.ErrServerClosed {
 		log.Fatal().Err(err).Msg("Failed to start web server")
 	}
 }
 
-func prometheusHandler() gin.HandlerFunc {
-	h := promhttp.Handler()
-	return func(c *gin.Context) {
-		h.ServeHTTP(c.Writer, c.Request)
+func pprofHandler() func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		name := vars["name"]
+		if name == "cmdline" {
+			pprof.Cmdline(w, r)
+			return
+		}
+		pprof.Handler(name).ServeHTTP(w, r)
 	}
 }
 
@@ -138,7 +170,7 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	go startWebserver()
+	go startWebserver(ctx)
 
 	if config.GetConfig().EnableWorker {
 		go startWorker(ctx)

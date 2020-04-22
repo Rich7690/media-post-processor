@@ -5,6 +5,7 @@ import (
 	"media-web/internal/config"
 	"media-web/internal/constants"
 	"media-web/internal/storage"
+	"media-web/internal/utils"
 	"media-web/internal/web"
 	"time"
 
@@ -32,6 +33,21 @@ var Enqueuer = worker
 func (c *WorkerContext) Log(job *work.Job, next work.NextMiddlewareFunc) error {
 	log.Info().Str("jobId", job.ID).Msg("Starting job: " + job.ID)
 	return next()
+}
+
+func (c *WorkerContext) Metrics(job *work.Job, next work.NextMiddlewareFunc) error {
+	utils.InflightJob.WithLabelValues(job.Name).Inc()
+	defer utils.InflightJob.WithLabelValues(job.Name).Dec()
+	start := time.Now()
+	err := next()
+	dur := time.Since(start)
+	status := "success"
+	if err != nil {
+		status = "error"
+	}
+	utils.JobCount.WithLabelValues(job.Name, status).Inc()
+	utils.JobTime.WithLabelValues(job.Name, status).Observe(dur.Seconds())
+	return err
 }
 
 var workerContext = WorkerContext{
@@ -89,6 +105,7 @@ func StartWorkerPool(context WorkerContext, factory WorkerPoolFactory, ctx conte
 	// However, here we use it as a mechanism to inject dependencies into the job handler
 	pool := factory.NewWorkerPool(context, 20, config.GetConfig().JobQueueNamespace, &storage.RedisPool)
 	pool.Middleware(context.Log)
+	pool.Middleware(context.Metrics)
 
 	pool.JobWithOptions(constants.TranscodeJobType, work.JobOptions{
 		Priority:       1,
@@ -99,14 +116,14 @@ func StartWorkerPool(context WorkerContext, factory WorkerPoolFactory, ctx conte
 
 	pool.JobWithOptions(constants.UpdateSonarrJobName, work.JobOptions{
 		Priority:       2,
-		MaxFails:       5,
+		MaxFails:       3,
 		SkipDead:       false,
 		MaxConcurrency: 5,
 	}, context.UpdateTVShow)
 
 	pool.JobWithOptions(constants.UpdateRadarrJobName, work.JobOptions{
 		Priority:       2,
-		MaxFails:       5,
+		MaxFails:       3,
 		SkipDead:       false,
 		MaxConcurrency: 5,
 	}, context.UpdateMovie)

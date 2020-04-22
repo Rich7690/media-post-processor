@@ -68,19 +68,20 @@ func GetWebClient() WebClient {
 	return WebClientImpl{client: netClient}
 }
 
-func (c WebClientImpl) MakeGetRequest(url url.URL, path string, values url.Values) (*http.Response, []byte, error) {
-	return makeGetRequest(url, path, values)
+func (c WebClientImpl) MakeGetRequest(baseUrl url.URL, path string, values url.Values) (*http.Response, []byte, error) {
+	return makeGetRequest(baseUrl, path, values)
 }
 
-func (c WebClientImpl) MakePostRequest(url url.URL, path string, values url.Values, body interface{}) (*http.Response, []byte, error) {
-	return makePostRequest(url, path, values, body)
+func (c WebClientImpl) MakePostRequest(baseUrl url.URL, path string, values url.Values, requestBody interface{}) (*http.Response, []byte, error) {
+	return makePostRequest(baseUrl, path, values, requestBody)
 }
 
 var netClient = http.Client{
 	Timeout: time.Second * 10,
 }
 
-func makePostRequest(url url.URL, path string, values url.Values, body interface{}) (*http.Response, []byte, error) {
+func makePostRequest(base url.URL, path string, values url.Values, body interface{}) (*http.Response, []byte, error) {
+	log.Trace().Str("base", base.String()).Str("path", path).Msg("preparing post")
 	value, err := json.Marshal(body)
 
 	if err != nil {
@@ -88,18 +89,17 @@ func makePostRequest(url url.URL, path string, values url.Values, body interface
 	}
 
 	buf := bytes.NewBuffer(value)
-	finalPath := path2.Join(url.Path, path)
-	url.RawPath = finalPath
-	url.Path = finalPath
-	currentValues := url.Query()
+	finalPath := path2.Join(base.Path, path)
+	base.Path = finalPath
+	currentValues := base.Query()
 	for k, v := range values {
 		for _, value := range v {
 			currentValues.Add(k, value)
 		}
 	}
-	url.RawQuery = currentValues.Encode()
-	log.Trace().Str("url", url.String()).Msg("Making POST request")
-	resp, err := netClient.Post(url.String(), "application/json", buf)
+	base.RawQuery = currentValues.Encode()
+	log.Trace().Str("url", base.String()).Msg("Making POST request")
+	resp, err := netClient.Post(base.String(), "application/json", buf)
 
 	if err != nil {
 		return nil, nil, err
@@ -111,19 +111,19 @@ func makePostRequest(url url.URL, path string, values url.Values, body interface
 	return resp, response, err
 }
 
-func makeGetRequest(url url.URL, path string, values url.Values) (*http.Response, []byte, error) {
-	finalPath := path2.Join(url.Path, path)
-	url.RawPath = finalPath
-	url.Path = finalPath
-	currentValues := url.Query()
+func makeGetRequest(base url.URL, path string, values url.Values) (*http.Response, []byte, error) {
+	log.Trace().Str("base", base.String()).Str("path", path).Msg("preparing get")
+	finalPath := path2.Join(base.Path, path)
+	base.Path = finalPath
+	currentValues := base.Query()
 	for k, v := range values {
 		for _, value := range v {
 			currentValues.Add(k, value)
 		}
 	}
-	url.RawQuery = currentValues.Encode()
-	log.Trace().Str("url", url.String()).Msg("Making GET request")
-	resp, err := netClient.Get(url.String())
+	base.RawQuery = currentValues.Encode()
+	log.Trace().Str("url", base.String()).Msg("Making GET request")
+	resp, err := netClient.Get(base.String())
 
 	if err != nil {
 		return nil, nil, err

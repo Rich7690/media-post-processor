@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/gocraft/work"
 	"github.com/rs/zerolog/log"
@@ -116,13 +115,14 @@ func (c *WorkerContext) TranscodeJobHandler(job *work.Job) error {
 	// Returns a channel to get the transcoding progress
 	progress := trans.Output()
 
-	now := time.Now()
+	//now := time.Now()
+	start := 0
 	// Example of printing transcoding progress
 	for msg := range progress {
 		message := "Transcoding: " + inputFilePath + " -> " + fmt.Sprint(msg)
-		if time.Since(now) > (30 * time.Second) {
+		if int(msg.Progress) >= (20 + start) {
 			log.Debug().Float64("progress", msg.Progress).Msg("Transcoding: " + inputFilePath)
-			now = time.Now()
+			start = int(msg.Progress)
 		}
 		job.Checkin(message)
 	}

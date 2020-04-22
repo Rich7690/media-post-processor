@@ -3,13 +3,16 @@ package controllers
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/gocraft/work"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/mock"
 	"io/ioutil"
+	"media-web/internal/constants"
 	"media-web/internal/web"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,15 +20,11 @@ func TestSonarrReturnsErrorForBadPayload(t *testing.T) {
 
 	m := mockWorker{}
 
-	r := gin.Default()
-
-	r.POST("/api/sonarr/webhook", GetSonarrWebhookHandler(m))
-
 	body := bytes.NewBufferString("Not valid json")
 
 	req, _ := http.NewRequest("POST", "/api/sonarr/webhook", body)
 	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
+	GetRadarrWebhookHandler(m)(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	m.AssertExpectations(t)
@@ -35,10 +34,6 @@ func TestSonarrReturnsErrorForFailedEnqueue(t *testing.T) {
 
 	m := mockWorker{}
 
-	r := gin.Default()
-
-	r.POST("/api/sonarr/webhook", GetSonarrWebhookHandler(m))
-
 	body := web.SonarrWebhook{EventType: "Download"}
 
 	payload, err := json.Marshal(body)
@@ -47,21 +42,18 @@ func TestSonarrReturnsErrorForFailedEnqueue(t *testing.T) {
 		t.Error("Failed to encode json")
 	}
 
+	m.On("EnqueueUnique", constants.TranscodeJobType, mock.Anything).Return(&work.Job{}, errors.New("boom"))
 	req, _ := http.NewRequest("POST", "/api/sonarr/webhook", bytes.NewBuffer(payload))
 	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
+	GetRadarrWebhookHandler(m)(w, req)
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 	m.AssertExpectations(t)
 }
 
 func TestSonarrEnqueuesJobForValidInput(t *testing.T) {
-	t.Skip("ignoring test for now")
+
 	m := mockWorker{}
-
-	r := gin.Default()
-
-	r.POST("/api/sonarr/webhook", GetSonarrWebhookHandler(m))
 
 	body := web.SonarrWebhook{EventType: "Download"}
 
@@ -71,9 +63,10 @@ func TestSonarrEnqueuesJobForValidInput(t *testing.T) {
 		t.Error("Failed to encode json")
 	}
 
+	m.On("EnqueueUnique", constants.TranscodeJobType, mock.Anything).Return(&work.Job{ID: "blah"}, nil)
 	req := httptest.NewRequest("POST", "/api/sonarr/webhook", bytes.NewBuffer(payload))
 	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
+	GetRadarrWebhookHandler(m)(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	_, err = ioutil.ReadAll(w.Body)

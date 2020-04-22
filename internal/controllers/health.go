@@ -1,9 +1,9 @@
 package controllers
 
-import "github.com/gin-gonic/gin"
+import (
+	"net/http"
+)
 
-func HealthHandler(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"message": "healthy",
-	})
+func HealthHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
 }
