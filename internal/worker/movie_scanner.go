@@ -12,6 +12,7 @@ import (
 // MovieScanner scans for movies to be converted into a consistent format
 type MovieScanner interface {
 	ScanForMovies() error
+	SearchForMissingMovies() error
 }
 
 type movieScannerImpl struct {
@@ -22,6 +23,14 @@ type movieScannerImpl struct {
 // NewMovieScanner creates a new instance of MovieScanner
 func NewMovieScanner(client web.RadarrClient, scheduler WorkScheduler) MovieScanner {
 	return movieScannerImpl{client: client, scheduler: scheduler}
+}
+
+func (m movieScannerImpl) SearchForMissingMovies() error {
+	cmd, err := m.client.ScanForMissingMovies()
+	if err == nil {
+		log.Info().Int("id", cmd.ID).Msg("Scanned for missing movies")
+	}
+	return err
 }
 
 func (m movieScannerImpl) ScanForMovies() error {

@@ -18,6 +18,7 @@ type RadarrClient interface {
 	LookupMovie(id int64) (*RadarrMovie, error)
 	GetAllMovies() ([]RadarrMovie, error)
 	GetMovieFilePath(id int64) (string, error)
+	ScanForMissingMovies() (*RadarrCommand, error)
 }
 
 type RadarrClientImpl struct {
@@ -48,6 +49,34 @@ func (c RadarrClientImpl) radarrPostRequest(client utils.WebClient, path string,
 		return resp, repBody, errors.New("got non-200 status code")
 	}
 	return resp, repBody, err
+}
+
+func (c RadarrClientImpl) ScanForMissingMovies() (*RadarrCommand, error) {
+	payload := make(map[string]interface{})
+
+	payload["name"] = "missingMoviesSearch"
+	payload["filterKey"] = "released"
+
+	resp, value, err := c.radarrPostRequest(utils.WebClientImpl{}, "api/command/", url.Values{}, payload)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode < 300 {
+		response := RadarrCommand{}
+
+		err = json.Unmarshal(value, &response)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return &response, nil
+	} else {
+		log.Err(err).Int("status_code", resp.StatusCode).Str("response", string(value)).Msg("Error calling radarr")
+		return nil, errors.New("bad response code")
+	}
 }
 
 func (c RadarrClientImpl) CheckRadarrCommand(id int) (*RadarrCommand, error) {

@@ -55,7 +55,7 @@ func startSonarrScanner(ctx context.Context) {
 	repeat <- true // queue up first one to kick it off on start
 	for {
 		go func() {
-			<-time.After(12 * time.Hour)
+			<-time.After(24 * time.Hour)
 			repeat <- true
 		}()
 
@@ -80,14 +80,19 @@ func startRadarrScanner(ctx context.Context) {
 	repeat <- true // queue up first one to kick it off on start
 	for {
 		go func() {
-			<-time.After(12 * time.Hour)
+			<-time.After(24 * time.Hour)
 			repeat <- true
 		}()
 
 		select {
 		case <-repeat:
+			log.Info().Msg("Scanning for missing movies")
+			err := scanner.SearchForMissingMovies()
+			if err != nil {
+				log.Err(err).Msg("Error searching for movies")
+			}
 			log.Info().Msg("Scanning for movies in wrong format")
-			err := scanner.ScanForMovies()
+			err = scanner.ScanForMovies()
 			log.Info().Msg("Done scanning for movies")
 			if err != nil {
 				log.Err(err).Msg("Error scanning for movies")
@@ -117,8 +122,13 @@ func startWebserver(ctx context.Context) {
 	log.Info().Msg("Starting server.")
 	ro := mux.NewRouter()
 
+	ro.StrictSlash(true)
 	//r.Use(static.ServeRoot("/", "./public"))
 	ro.HandleFunc("/health", controllers.HealthHandler)
+	/*ro.HandleFunc("/api/movies", mvCtl.HandleCreate).Methods("POST")
+	ro.HandleFunc("/api/movies", mvCtl.HandleList).Methods("GET")
+	ro.HandleFunc("/api/movies/{id}", mvCtl.HandleDelete).Methods("DELETE")
+	ro.HandleFunc("/api/search/movies", mvCtl.HandleSearch).Methods("GET")*/
 	ro.HandleFunc("/api/radarr/webhook", controllers.GetRadarrWebhookHandler(worker.Enqueuer))
 	ro.HandleFunc("/api/sonarr/webhook", controllers.GetSonarrWebhookHandler(worker.Enqueuer)).Methods(http.MethodPost)
 	ro.Handle("/metrics", promhttp.Handler())
@@ -134,7 +144,7 @@ func startWebserver(ctx context.Context) {
 		IdleTimeout:  30 * time.Second,
 	}
 	go func() {
-		<- ctx.Done()
+		<-ctx.Done()
 		err := serv.Close()
 		if err != nil {
 			log.Err(err).Msg("error on server close")

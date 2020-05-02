@@ -18,3 +18,7 @@ type MockRadarr struct {
 	getAllMovies       func() ([]web.RadarrMovie, error)
 	getMovieFilePath   func(id int64) (string, error)
 }
+
+func (c MockRadarr) ScanForMissingMovies() (*web.RadarrCommand, error) {
+	panic("implement me")
+}
