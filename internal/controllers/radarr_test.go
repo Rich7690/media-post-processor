@@ -3,12 +3,13 @@ package controllers
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"media-web/internal/web"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/pkg/errors"
 
 	"github.com/gocraft/work"
 	"github.com/stretchr/testify/assert"

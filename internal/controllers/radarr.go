@@ -26,7 +26,7 @@ func GetRadarrWebhookHandler(scheduler worker.WorkScheduler) func(w http.Respons
 		case "Download":
 			log.Info().Msg("Got Download request")
 			job, err := scheduler.EnqueueUnique(constants.TranscodeJobType, work.Q{
-				constants.MovieIdKey: body.Movie.ID,
+				constants.MovieIdKey:       body.Movie.ID,
 				constants.TranscodeTypeKey: constants.Movie,
 			})
 

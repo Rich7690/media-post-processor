@@ -10,8 +10,9 @@ import (
 	"net/http/pprof"
 	"os"
 	"os/signal"
-	"strings"
 	"time"
+
+	"github.com/robfig/cron"
 
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -19,90 +20,57 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type nullWriter struct {
-}
-
-func (w nullWriter) Write(p []byte) (n int, err error) {
-	return len(p), nil
-}
-
-type writer struct {
-}
-
-func (w writer) Write(p []byte) (n int, err error) {
-	line := string(p)
-	log.Debug().Msg(strings.TrimSuffix(line, "\n"))
-	return len(p), nil
-}
-
-type errorWriter struct {
-}
-
-func (w errorWriter) Write(p []byte) (n int, err error) {
-	log.Error().Msg(string(p))
-	return len(p), nil
-}
-
 func startWorker(ctx context.Context) {
 	log.Info().Msg("Starting worker.")
 	worker.StartWorkerPool(worker.GetWorkerContext(), worker.WorkerPoolFactoryImpl{}, ctx)
 }
 
-func startSonarrScanner(ctx context.Context) {
-	log.Info().Msg("Starting Sonarr scanner")
-	time.Sleep(10 * time.Second)
-	repeat := make(chan bool, 1)
-	repeat <- true // queue up first one to kick it off on start
-	for {
-		go func() {
-			<-time.After(24 * time.Hour)
-			repeat <- true
-		}()
+func performTVScan() {
+	log.Info().Msg("Scanning for TV in wrong format")
+	worker.ScanForTVShows(web.GetSonarrClient(), worker.Enqueuer)
+	log.Info().Msg("Done scanning for TV shows")
+}
 
-		select {
-		case <-repeat:
-			log.Info().Msg("Scanning for TV in wrong format")
-			worker.ScanForTVShows(web.GetSonarrClient(), worker.Enqueuer)
-			log.Info().Msg("Done scanning for TV shows")
-			break
-		case <-ctx.Done():
-			log.Info().Msg("Closing Sonarr scanner")
-			return
-		}
+func performScan(scanner worker.MovieScanner) {
+	log.Info().Msg("Scanning for missing movies")
+	err := scanner.SearchForMissingMovies()
+	if err != nil {
+		log.Err(err).Msg("Error searching for movies")
+	}
+	log.Info().Msg("Scanning for movies in wrong format")
+	err = scanner.ScanForMovies()
+	log.Info().Msg("Done scanning for movies")
+	if err != nil {
+		log.Err(err).Msg("Error scanning for movies")
 	}
 }
 
-func startRadarrScanner(ctx context.Context) {
-	log.Info().Msg("Starting Radarr scanner")
-	time.Sleep(10 * time.Second)
-	scanner := worker.NewMovieScanner(web.GetRadarrClient(), worker.Enqueuer)
-	repeat := make(chan bool, 1)
-	repeat <- true // queue up first one to kick it off on start
-	for {
-		go func() {
-			<-time.After(24 * time.Hour)
-			repeat <- true
-		}()
+func startScanners(ctx context.Context) {
+	c := cron.New()
 
-		select {
-		case <-repeat:
-			log.Info().Msg("Scanning for missing movies")
-			err := scanner.SearchForMissingMovies()
-			if err != nil {
-				log.Err(err).Msg("Error searching for movies")
-			}
-			log.Info().Msg("Scanning for movies in wrong format")
-			err = scanner.ScanForMovies()
-			log.Info().Msg("Done scanning for movies")
-			if err != nil {
-				log.Err(err).Msg("Error scanning for movies")
-			}
-			break
-		case <-ctx.Done():
-			log.Info().Msg("Closing Radarr scanner")
-			return
+	if config.GetConfig().EnableRadarrScanner {
+		scanner := worker.NewMovieScanner(web.GetRadarrClient(), worker.Enqueuer)
+
+		err := c.AddFunc("0 0 * * *", func() {
+			performScan(scanner)
+		})
+		if err != nil {
+			log.Fatal().Err(err).Msg("Failed to start Radarr scanner")
 		}
 	}
+
+	if config.GetConfig().EnableSonarrScanner {
+		err := c.AddFunc("0 1 * * *", func() {
+			performTVScan()
+		})
+		if err != nil {
+			log.Fatal().Err(err).Msg("Failed to start Radarr scanner")
+		}
+	}
+	c.Start()
+
+	<-ctx.Done()
+	c.Stop()
 }
 
 func recoverHandler(next http.Handler) http.Handler {
@@ -186,13 +154,7 @@ func main() {
 		go startWorker(ctx)
 	}
 
-	if config.GetConfig().EnableRadarrScanner {
-		go startRadarrScanner(ctx)
-	}
-
-	if config.GetConfig().EnableSonarrScanner {
-		go startSonarrScanner(ctx)
-	}
+	go startScanners(ctx)
 
 	log.Debug().Msg("Waiting for exit signal")
 	signalChan := make(chan os.Signal, 1)
