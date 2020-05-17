@@ -140,7 +140,6 @@ func pprofHandler() func(w http.ResponseWriter, r *http.Request) {
 func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
-	log.Logger = log.With().Timestamp().Logger()
 
 	if config.GetConfig().EnablePrettyLog {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.StampMilli})
