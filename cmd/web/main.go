@@ -12,7 +12,7 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/robfig/cron"
+	"github.com/robfig/cron/v3"
 
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -51,7 +51,7 @@ func startScanners(ctx context.Context) {
 	if config.GetConfig().EnableRadarrScanner {
 		scanner := worker.NewMovieScanner(web.GetRadarrClient(), worker.Enqueuer)
 
-		err := c.AddFunc("0 0 * * *", func() {
+		_, err := c.AddFunc("0 0 * * *", func() {
 			performScan(scanner)
 		})
 		if err != nil {
@@ -60,7 +60,7 @@ func startScanners(ctx context.Context) {
 	}
 
 	if config.GetConfig().EnableSonarrScanner {
-		err := c.AddFunc("0 1 * * *", func() {
+		_, err := c.AddFunc("0 1 * * *", func() {
 			performTVScan()
 		})
 		if err != nil {
