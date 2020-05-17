@@ -8,7 +8,6 @@ RUN mkdir /app
 ADD . /app
 WORKDIR /app
 RUN apk update
-RUN apk upgrade
 RUN apk add gcc libstdc++ libc-dev
 # We want to build our application's binary executable
 RUN go build -a ./cmd/web/main.go
@@ -24,6 +23,10 @@ COPY ./public ./public
 RUN apk update
 RUN apk upgrade
 RUN apk add ffmpeg
+RUN apk add tzdata
+RUN cp /usr/share/zoneinfo/America/Los_Angeles /etc/localtime
+RUN echo "America/Los_Angeles" >  /etc/timezone
+RUN apk del tzdata
 
 VOLUME /config
 EXPOSE 8080
