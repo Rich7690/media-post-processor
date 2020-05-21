@@ -12,6 +12,7 @@ steps:
   image: plugins/docker
   settings:
     auto_tag: true
+    tags: latest
     dockerfile: Dockerfile
     repo: unknowndev7690/web
     username:
@@ -31,9 +32,11 @@ platform:
   os: linux
 
 steps:
-  - name: pull latest
-    commands:
-     - cd /storage/server-config && docker-compose pull web && docker-compose up -d
-
+- name: pull latest
+  commands:
+    - cd /storage/server-config && docker-compose pull web && docker-compose up -d
+  when:
+    event:
+      - tag
 depends_on:
   - docker-build
