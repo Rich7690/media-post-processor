@@ -10,5 +10,8 @@ platform:
 steps:
 - name: greeting
   commands:
-  - docker ps -a
-
+  - docker build . --file Dockerfile --tag web:latest
+  when:
+    ref:
+      include:
+       - refs/tags/**
