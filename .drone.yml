@@ -10,6 +10,5 @@ platform:
 steps:
 - name: greeting
   commands:
-  - echo hello world
+  - docker ps -a
 
-...
