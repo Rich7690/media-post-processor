@@ -1,17 +1,39 @@
 ---
 kind: pipeline
-type: exec
-name: default
+type: docker
+name: docker-build
 
 platform:
-  os: linux
   arch: amd64
+  os: linux
 
 steps:
-- name: greeting
-  commands:
-  - docker build . --file Dockerfile --tag web:latest
-  when:
-    ref:
-      include:
-       - refs/tags/**
+- name: publish
+    image: plugins/docker
+    settings:
+      auto_tag: true
+      dockerfile: Dockerfile
+      repo: unknowndev7690/web
+      username:
+        from_secret: docker_username
+      password:
+        from_secret: docker_password
+    when:
+      event:
+        - tag
+---
+kind: pipeline
+type: exec
+name: linux-amd64
+
+platform:
+  arch: amd64
+  os: linux
+
+steps:
+  - name: pull latest
+    commands:
+     - cd /storage/server-config && docker-compose pull web && docker-compose up -d
+
+depends_on:
+  - docker-build
