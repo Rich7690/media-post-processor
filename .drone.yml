@@ -9,18 +9,18 @@ platform:
 
 steps:
 - name: publish
-    image: plugins/docker
-    settings:
-      auto_tag: true
-      dockerfile: Dockerfile
-      repo: unknowndev7690/web
-      username:
-        from_secret: docker_username
-      password:
-        from_secret: docker_password
-    when:
-      event:
-        - tag
+  image: plugins/docker
+  settings:
+    auto_tag: true
+    dockerfile: Dockerfile
+    repo: unknowndev7690/web
+    username:
+      from_secret: docker_username
+    password:
+      from_secret: docker_password
+  when:
+    event:
+      - tag
 ---
 kind: pipeline
 type: exec
