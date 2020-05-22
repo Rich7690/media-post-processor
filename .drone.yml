@@ -11,8 +11,9 @@ steps:
 - name: publish
   image: plugins/docker
   settings:
-    #auto_tag: true
-    tags: latest
+    tags: 
+     - latest
+     - ${DRONE_TAG}
     dockerfile: Dockerfile
     repo: unknowndev7690/web
     username:
@@ -25,6 +26,8 @@ steps:
 trigger:
   event:
    - tag
+node:
+  server: "true"
 ---
 kind: pipeline
 type: exec
@@ -46,3 +49,5 @@ trigger:
    - tag      
 depends_on:
   - docker-build
+node:
+  server: "true"
