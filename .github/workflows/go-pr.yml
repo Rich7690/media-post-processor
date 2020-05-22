@@ -1,8 +1,5 @@
 name: Golang Build
 on:
-  push:
-    branches:
-      - dev
   pull_request:
     types: [opened, synchronize, reopened]
 jobs:

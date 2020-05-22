@@ -1,8 +1,9 @@
-name: Master Build and Docker Push
+name: Test and Build
 on:
   push:
     branches:
       - master
+      - dev
     paths-ignore:
       - 'README.md'
 jobs:
@@ -49,7 +50,9 @@ jobs:
           tag_with_sha: true # optional
           cache_froms: unknowndev7690/web:latest # optional
           add_git_labels: true # optional
+          push: ${{ startsWith(github.ref, 'refs/heads/master') }}
       - name: Run SSH command
+        if: ${{ startsWith(github.ref, 'refs/heads/master') }}
         uses: garygrossgarten/github-action-ssh@v0.5.0
         with:
           command: cd /storage/server-config && docker-compose pull web && docker-compose up -d web
