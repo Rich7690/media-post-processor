@@ -1,5 +1,5 @@
 # Media Post Processor
-[![Actions Status](https://github.com/rich7690/media-post-processor/workflows/Master%20Build%20and%20Version%20Bump/badge.svg)](https://github.com/media-post-processor/actions)
+![Test and Build](https://github.com/Rich7690/media-post-processor/workflows/Test%20and%20Build/badge.svg?branch=master)
 [![Coverage Status](https://coveralls.io/repos/github/Rich7690/media-post-processor/badge.svg?branch=master)](https://coveralls.io/github/Rich7690/media-post-processor?branch=master) 
 ![Code Climate maintainability](https://img.shields.io/codeclimate/maintainability-percentage/Rich7690/media-post-processor)
 [![Docker Pulls](https://img.shields.io/docker/pulls/unknowndev7690/web.svg)](https://img.shields.io/docker/pulls/unknowndev7690/web.svg)

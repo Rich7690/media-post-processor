@@ -40,7 +40,7 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v1
-      - name: Build and push Docker images
+      - name: Build Docker image
         uses: docker/build-push-action@v1.1.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }} # optional
