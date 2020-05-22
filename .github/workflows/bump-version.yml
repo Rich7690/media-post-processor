@@ -1,4 +1,4 @@
-name: Master Build and Version Bump
+name: Master Build and Docker Push
 on:
   push:
     branches:
@@ -10,7 +10,6 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
-
       - name: Set up Go 1.14
         uses: actions/setup-go@v1
         with:
@@ -33,14 +32,27 @@ jobs:
 
       - name: Test
         run: go test ./...
-  bump:
-    name: Bump Version
+  push:
+    name: Docker Build and Push
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
-      - name: Bump version and push tag
-        uses: anothrNick/github-tag-action@1.11.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.PATNAME }}
-          WITH_V: true
+      - name: Check out code
+        uses: actions/checkout@v1
+      - name: Build and push Docker images
+        uses: docker/build-push-action@v1.1.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }} # optional
+          password: ${{ secrets.DOCKER_PASSWORD }} # optional
+          repository: unknowndev7690/web
+          tags: latest
+          tag_with_sha: true # optional
+          cache_froms: unknowndev7690/web:latest # optional
+          add_git_labels: true # optional
+      - name: Run SSH command
+        uses: garygrossgarten/github-action-ssh@v0.5.0
+        with:
+          command: cd /storage/server-config && docker-compose pull web && docker-compose up -d web
+          host: ${{ secrets.HOST }}
+          username: dockeruser
+          privateKey: ${{ secrets.SSH_KEY}}
