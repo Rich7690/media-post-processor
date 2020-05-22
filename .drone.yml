@@ -11,7 +11,7 @@ steps:
 - name: publish
   image: plugins/docker
   settings:
-    auto_tag: true
+    #auto_tag: true
     tags: latest
     dockerfile: Dockerfile
     repo: unknowndev7690/web
@@ -22,6 +22,9 @@ steps:
   when:
     event:
       - tag
+trigger:
+  event:
+   - tag
 ---
 kind: pipeline
 type: exec
@@ -38,5 +41,8 @@ steps:
   when:
     event:
       - tag
+trigger:
+  event:
+   - tag      
 depends_on:
   - docker-build
