@@ -1,0 +1,40 @@
+name: Docker Push
+on:
+  push:
+    tags:
+      - '*'
+jobs:
+  docker:
+    name: Docker Push
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v1
+      - name: Build image
+        run: docker build . --file Dockerfile --tag image
+
+      - name: Log into registry
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+
+      - name: Push image
+        run: |
+          IMAGE_ID=unknowndev7690/web
+          # Strip git ref prefix from version
+          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+          # Strip "v" prefix from tag name
+          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
+          # Use Docker `latest` tag convention
+          [ "$VERSION" == "master" ] && VERSION=latest
+          echo IMAGE_ID=$IMAGE_ID
+          echo VERSION=$VERSION
+          docker tag image $IMAGE_ID:$VERSION
+          docker tag image $IMAGE_ID:latest
+          docker push $IMAGE_ID:$VERSION
+          docker push $IMAGE_ID:latest
+      - name: Run SSH command
+        uses: garygrossgarten/github-action-ssh@v0.5.0
+        with:
+          command: pwd && whoami
+          host: ${{ secrets.HOST }}
+          username: dockeruser
+          privateKey: ${{ secrets.SSH_KEY}}
