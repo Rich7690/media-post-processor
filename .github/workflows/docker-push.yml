@@ -9,32 +9,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v1
-      - name: Build image
-        run: docker build . --file Dockerfile --tag image
-
-      - name: Log into registry
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
-
-      - name: Push image
-        run: |
-          IMAGE_ID=unknowndev7690/web
-          # Strip git ref prefix from version
-          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
-          # Strip "v" prefix from tag name
-          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
-          # Use Docker `latest` tag convention
-          [ "$VERSION" == "master" ] && VERSION=latest
-          echo IMAGE_ID=$IMAGE_ID
-          echo VERSION=$VERSION
-          docker tag image $IMAGE_ID:$VERSION
-          docker tag image $IMAGE_ID:latest
-          docker push $IMAGE_ID:$VERSION
-          docker push $IMAGE_ID:latest
+      - name: Build and push Docker images
+        uses: docker/build-push-action@v1.1.0
+        with:
+         username: ${{ secrets.DOCKER_USERNAME }} # optional
+         password: ${{ secrets.DOCKER_PASSWORD }} # optional
+         repository: unknowndev7690/web
+         tags: latest
+         tag_with_ref: true # optional
+         cache_froms: unknowndev7690/web:latest # optional
+         add_git_labels: true # optional
       - name: Run SSH command
         uses: garygrossgarten/github-action-ssh@v0.5.0
         with:
-          command: pwd && whoami
+          command: cd /storage/server-config && docker-compose pull web && docker-compose up -d web
           host: ${{ secrets.HOST }}
           username: dockeruser
           privateKey: ${{ secrets.SSH_KEY}}
