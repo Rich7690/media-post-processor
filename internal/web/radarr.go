@@ -55,7 +55,8 @@ func (c RadarrClientImpl) ScanForMissingMovies() (*RadarrCommand, error) {
 	payload := make(map[string]interface{})
 
 	payload["name"] = "missingMoviesSearch"
-	payload["filterKey"] = "released"
+	payload["filterKey"] = "monitored"
+	payload["filterValue"] = "true"
 
 	resp, value, err := c.radarrPostRequest(utils.WebClientImpl{}, "api/command/", url.Values{}, payload)
 
