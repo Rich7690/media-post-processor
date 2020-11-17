@@ -11,10 +11,10 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Go 1.14
+      - name: Set up Go
         uses: actions/setup-go@v1
         with:
-          go-version: 1.14
+          go-version: 1.15
         id: go
 
       - name: Check out code into the Go module directory
@@ -51,11 +51,3 @@ jobs:
           cache_froms: unknowndev7690/web:latest # optional
           add_git_labels: true # optional
           push: ${{ startsWith(github.ref, 'refs/heads/master') }}
-      - name: Run SSH command
-        if: ${{ startsWith(github.ref, 'refs/heads/master') }}
-        uses: garygrossgarten/github-action-ssh@v0.5.0
-        with:
-          command: cd /storage/server-config && docker-compose pull web && docker-compose up -d web
-          host: ${{ secrets.HOST }}
-          username: dockeruser
-          privateKey: ${{ secrets.SSH_KEY}}

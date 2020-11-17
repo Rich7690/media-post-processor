@@ -1,6 +1,6 @@
 # We'll choose the incredibly lightweight
 # Go alpine image to work with
-FROM golang:1.14-alpine3.11 AS builder
+FROM golang:1.15-alpine3.12 AS builder
 
 # We create an /app directory in which
 # we'll put all of our project code
@@ -14,7 +14,7 @@ RUN go build -a ./cmd/web/main.go
 
 # the lightweight scratch image we'll
 # run our application within
-FROM alpine:3.11 AS production
+FROM alpine:3.12 AS production
 # We have to copy the output from our
 # builder stage to our production stage
 COPY --from=builder /app/main .

@@ -25,7 +25,7 @@ func (c *WorkerContext) UpdateTVShow(job *work.Job) error {
 		result, err := c.SonarrClient.CheckSonarrCommand(cmd.ID)
 
 		if err == nil {
-			if strings.Index(result.State, "complete") != -1 {
+			if strings.Contains(result.State, "complete") {
 				log.Info().Msg("Rescan complete for: " + strconv.Itoa(cmd.ID))
 				return nil
 			} else {

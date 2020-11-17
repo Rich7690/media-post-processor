@@ -24,7 +24,7 @@ func (c *WorkerContext) UpdateMovie(job *work.Job) error {
 		result, err := c.RadarrClient.CheckRadarrCommand(cmd.ID)
 
 		if err == nil {
-			if strings.Index(result.State, "complete") != -1 {
+			if strings.Contains(result.State, "complete") {
 				log.Info().Msgf("Rescan complete for: %d", cmd.ID)
 				return nil
 			} else {

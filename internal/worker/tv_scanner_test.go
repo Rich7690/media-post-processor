@@ -42,7 +42,7 @@ func TestErrorFromTVScanner(t *testing.T) {
 	}
 	// We'd fail with pointer errors if we called anything on here
 	w := mockWorker{}
-	ScanForTVShows(mockClient, w)
+	ScanForTVShows(mockClient, &w)
 	w.AssertExpectations(t)
 }
 
@@ -73,7 +73,7 @@ func TestSkipIfUnmatchedExtension(t *testing.T) {
 		constants.TranscodeTypeKey: constants.TV,
 		constants.EpisodeFileIdKey: 2,
 	}).Once().Return(nil, nil)
-	ScanForTVShows(mockClient, w)
+	ScanForTVShows(mockClient, &w)
 	assert.Equal(t, 1, inputSeries)
 	w.AssertExpectations(t)
 }

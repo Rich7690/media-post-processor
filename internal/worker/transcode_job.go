@@ -9,24 +9,23 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/gocraft/work"
 	"github.com/rs/zerolog/log"
-	"github.com/xfrr/goffmpeg/ffmpeg"
-	"github.com/xfrr/goffmpeg/models"
-	"github.com/xfrr/goffmpeg/transcoder"
+
+
+	"github.com/floostack/transcoder"
+	"github.com/floostack/transcoder/ffmpeg"
 )
 
-type Transcoder interface {
-	SetConfiguration(config ffmpeg.Configuration)
-	Initialize(input string, output string) error
-	MediaFile() *models.Mediafile
-	Output() <-chan models.Progress
-	Run(progress bool) <-chan error
-}
-
-func GetTranscoder() Transcoder {
-	trans := transcoder.Transcoder{}
-	return &trans
+func GetTranscoder() transcoder.Transcoder {
+	ffmpegConf := &ffmpeg.Config{
+		FfmpegBinPath:   config.GetConfig().FfmpegPath,
+		FfprobeBinPath:  config.GetConfig().FfprobePath,
+		ProgressEnabled: true,
+	}
+	return ffmpeg.New(ffmpegConf)
 }
 
 func (c *WorkerContext) TranscodeTVShow() {
@@ -38,10 +37,10 @@ func (c *WorkerContext) TranscodeJobHandler(job *work.Job) error {
 	trans := c.GetTranscoder()
 	transcodeType := constants.TranscodeType(job.ArgString(constants.TranscodeTypeKey))
 
-	var inputFilePath = ""
-	var id int64 = -1
-	var err error = nil
-	var seriesId = -1
+	var inputFilePath string
+	var id int64
+	var err error
+	var seriesId int
 	switch transcodeType {
 	case constants.TV:
 		id = job.ArgInt64(constants.EpisodeFileIdKey)
@@ -83,56 +82,52 @@ func (c *WorkerContext) TranscodeJobHandler(job *work.Job) error {
 		log.Debug().Msg("Current extension: " + ext)
 	}
 
-	trans.SetConfiguration(ffmpeg.Configuration{
-		FfmpegBin:  config.GetConfig().FfmpegPath,
-		FfprobeBin: config.GetConfig().FfprobePath,
-	})
-
 	fileName := filepath.Base(inputFilePath)
 	baseDir := filepath.Dir(inputFilePath)
 	newPath := baseDir + "/" + strings.Replace(fileName, ext, ".mp4", 1)
 	log.Debug().Msg("Transcoding to path: " + newPath)
-	err = trans.Initialize(inputFilePath, newPath)
 
-	if err != nil {
-		log.Err(err).Msg("Error initializing transcode")
-		return err
+	trans = trans.Input(inputFilePath).Output(newPath)
+
+	log.Info().Msg("Transcoding: " + inputFilePath)
+
+	preset := "veryfast"
+	format := "mp4"
+	codec := "libx264"
+	tune := "film"
+	var crf uint32 = 23
+	opts := ffmpeg.Options{
+		Preset:       &preset,
+		OutputFormat: &format,
+		VideoCodec:   &codec,
+		Tune:         &tune,
+		Crf:          &crf,
 	}
 
-	log.Info().Msg("Transcoding: " + trans.MediaFile().InputPath())
-
-	trans.MediaFile().SetPreset("veryfast")
-	trans.MediaFile().SetOutputFormat("mp4")
-	trans.MediaFile().SetVideoCodec("libx264")
-	trans.MediaFile().SetQuality(23)
-	trans.MediaFile().SetTune("film")
-
-	log.Debug().Msg("Running ffmpeg command: \"" + strings.Join(trans.MediaFile().ToStrCommand(), " ") + "\"")
-
 	// Start transcoder process with progress checking
-	done := trans.Run(true)
+	progress, err := trans.Start(opts)
 
 	// Returns a channel to get the transcoding progress
-	progress := trans.Output()
+	if err != nil {
+		return err
+	}
 
 	//now := time.Now()
 	start := 0
+	var prog float64 = 0
 	// Example of printing transcoding progress
 	for msg := range progress {
 		message := "Transcoding: " + inputFilePath + " -> " + fmt.Sprint(msg)
-		if int(msg.Progress) >= (20 + start) {
-			log.Debug().Float64("progress", msg.Progress).Msg("Transcoding: " + inputFilePath)
-			start = int(msg.Progress)
+		if int(msg.GetProgress()) >= (20 + start) {
+			log.Debug().Float64("progress", msg.GetProgress()).Msg("Transcoding: " + inputFilePath)
+			start = int(msg.GetProgress())
 		}
 		job.Checkin(message)
+		prog = msg.GetProgress()
 	}
 
-	// This channel is used to wait for the transcoding process to end
-	err = <-done
-
-	if err != nil {
-		log.Error().Err(err).Msg("Error performing transcode")
-		return err
+	if prog != 100 {
+		return errors.New("Failed to get 100% progress on conversion. Keeping old file")
 	}
 
 	log.Info().Msg("Deleting old file")

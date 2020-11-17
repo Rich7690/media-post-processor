@@ -31,7 +31,7 @@ type mockWorker struct {
 	mock.Mock
 }
 
-func (m mockWorker) EnqueueUnique(jobName string, args map[string]interface{}) (*work.Job, error) {
+func (m *mockWorker) EnqueueUnique(jobName string, args map[string]interface{}) (*work.Job, error) {
 	resp := m.Called(jobName, args)
 
 	arg := resp.Get(0)
@@ -54,7 +54,7 @@ func TestErrorFromScanner(t *testing.T) {
 	}
 	w := mockWorker{}
 	w.On("EnqueueUnique").Times(0).Return(nil, nil)
-	scanner := NewMovieScanner(mockClient, w)
+	scanner := NewMovieScanner(mockClient, &w)
 	err := scanner.ScanForMovies()
 
 	assert.Error(t, err)
@@ -70,7 +70,7 @@ func TestDoesNothingIfNoMovies(t *testing.T) {
 	}
 	w := mockWorker{}
 	w.On("EnqueueUnique").Times(0).Return(nil, nil)
-	scanner := NewMovieScanner(mockClient, w)
+	scanner := NewMovieScanner(mockClient, &w)
 	err := scanner.ScanForMovies()
 
 	if err != nil {
@@ -84,12 +84,12 @@ func TestDoesNothingIfNotDownloaded(t *testing.T) {
 	mockClient := MockRadarr{}
 	mockClient.getAllMovies = func() (movies []web.RadarrMovie, e error) {
 		movieList := make([]web.RadarrMovie, 1)
-		movieList = append(movies, web.RadarrMovie{Downloaded: false})
+		movieList = append(movieList, web.RadarrMovie{Downloaded: false})
 		return movieList, nil
 	}
 	w := mockWorker{}
 	w.On("EnqueueUnique").Times(0).Return(nil, nil)
-	scanner := NewMovieScanner(mockClient, w)
+	scanner := NewMovieScanner(mockClient, &w)
 	err := scanner.ScanForMovies()
 
 	if err != nil {
@@ -102,13 +102,12 @@ func TestSkipsIfAlreadyRightFormat(t *testing.T) {
 
 	mockClient := MockRadarr{}
 	mockClient.getAllMovies = func() (movies []web.RadarrMovie, e error) {
-		movieList := make([]web.RadarrMovie, 1)
-		movieList = append(movies, web.RadarrMovie{Downloaded: true, MovieFile: web.MovieFile{RelativePath: "test.mp4"}})
+		movieList := append(movies, web.RadarrMovie{Downloaded: true, MovieFile: web.MovieFile{RelativePath: "test.mp4"}})
 		return movieList, nil
 	}
 	w := mockWorker{}
 	w.On("EnqueueUnique").Times(0).Return(nil, nil)
-	scanner := NewMovieScanner(mockClient, w)
+	scanner := NewMovieScanner(mockClient, &w)
 	err := scanner.ScanForMovies()
 
 	if err != nil {
@@ -121,14 +120,13 @@ func TestEnqueueIfProperFormat(t *testing.T) {
 
 	mockClient := MockRadarr{}
 	mockClient.getAllMovies = func() (movies []web.RadarrMovie, e error) {
-		movieList := make([]web.RadarrMovie, 1)
-		movieList = append(movies, web.RadarrMovie{Downloaded: true, MovieFile: web.MovieFile{RelativePath: "test.mkv"}})
+		movieList := []web.RadarrMovie{web.RadarrMovie{Downloaded: true, MovieFile: web.MovieFile{RelativePath: "test.mkv"}}}
 		return movieList, nil
 	}
 	w := mockWorker{}
 	w.On("EnqueueUnique", constants.TranscodeJobType, map[string]interface{}{constants.MovieIdKey: 0,
 		constants.TranscodeTypeKey: constants.Movie}).Once().Return(nil, nil)
-	scanner := NewMovieScanner(mockClient, w)
+	scanner := NewMovieScanner(mockClient, &w)
 	err := scanner.ScanForMovies()
 
 	if err != nil {
@@ -142,13 +140,12 @@ func TestEnqueueAndIgnoresEnqueueError(t *testing.T) {
 
 	mockClient := MockRadarr{}
 	mockClient.getAllMovies = func() (movies []web.RadarrMovie, e error) {
-		movieList := make([]web.RadarrMovie, 1)
-		movieList = append(movies, web.RadarrMovie{Downloaded: true, MovieFile: web.MovieFile{RelativePath: "test.mkv"}})
+		movieList := []web.RadarrMovie{web.RadarrMovie{Downloaded: true, MovieFile: web.MovieFile{RelativePath: "test.mkv"}}}
 		return movieList, nil
 	}
 	w := mockWorker{}
 	w.On("EnqueueUnique", mock.Anything, mock.Anything).Once().Return(nil, errors.New("boom"))
-	scanner := NewMovieScanner(mockClient, w)
+	scanner := NewMovieScanner(mockClient, &w)
 	err := scanner.ScanForMovies()
 
 	if err != nil {

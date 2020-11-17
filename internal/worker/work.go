@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"github.com/floostack/transcoder"
 	"context"
 	"media-web/internal/config"
 	"media-web/internal/constants"
@@ -15,7 +16,7 @@ import (
 )
 
 type WorkerContext struct {
-	GetTranscoder func() Transcoder
+	GetTranscoder func() transcoder.Transcoder
 	SonarrClient  web.SonarrClient
 	RadarrClient  web.RadarrClient
 	Enqueuer      WorkScheduler
