@@ -16,5 +16,5 @@ type TranscodeType string
 
 const (
 	TV    TranscodeType = "TV"
-	Movie               = "Movie"
+	Movie TranscodeType = "Movie"
 )

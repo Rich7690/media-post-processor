@@ -63,6 +63,7 @@ func (c RadarrClientImpl) ScanForMissingMovies() (*RadarrCommand, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode < 300 {
 		response := RadarrCommand{}
@@ -74,10 +75,9 @@ func (c RadarrClientImpl) ScanForMissingMovies() (*RadarrCommand, error) {
 		}
 
 		return &response, nil
-	} else {
-		log.Err(err).Int("status_code", resp.StatusCode).Str("response", string(value)).Msg("Error calling radarr")
-		return nil, errors.New("bad response code")
 	}
+	log.Err(err).Int("status_code", resp.StatusCode).Str("response", string(value)).Msg("Error calling radarr")
+	return nil, errors.New("bad response code")
 }
 
 func (c RadarrClientImpl) CheckRadarrCommand(id int) (*RadarrCommand, error) {
@@ -87,7 +87,6 @@ func (c RadarrClientImpl) CheckRadarrCommand(id int) (*RadarrCommand, error) {
 }
 
 func (c RadarrClientImpl) RescanMovie(id int64) (*RadarrCommand, error) {
-
 	payload := make(map[string]interface{})
 
 	payload["name"] = "RescanMovie"
@@ -109,18 +108,16 @@ func (c RadarrClientImpl) RescanMovie(id int64) (*RadarrCommand, error) {
 		}
 
 		return &response, nil
-	} else {
-		log.Err(err).Int("status_code", resp.StatusCode).Str("response", string(value)).Msg("Error calling radarr")
-		return nil, errors.New("Bad response code")
 	}
-
+	log.Err(err).Int("status_code", resp.StatusCode).Str("response", string(value)).Msg("Error calling radarr")
+	return nil, errors.New("Bad response code")
 }
 
 func (c RadarrClientImpl) LookupMovie(id int64) (*RadarrMovie, error) {
 	var response RadarrMovie
 	err := c.radarrGetRequest(utils.WebClientImpl{}, fmt.Sprintf("api/movie/%d", id), url.Values{}, &response)
 
-	if err == utils.NotFoundError {
+	if err == utils.ErrNotFound {
 		return nil, nil
 	}
 	return &response, err
@@ -130,14 +127,13 @@ func (c RadarrClientImpl) GetAllMovies() ([]RadarrMovie, error) {
 	response := make([]RadarrMovie, 0)
 	err := c.radarrGetRequest(utils.WebClientImpl{}, "api/movie/", url.Values{}, &response)
 
-	if err == utils.NotFoundError {
+	if err == utils.ErrNotFound {
 		return response, nil
 	}
 	return response, err
 }
 
 func (c RadarrClientImpl) GetMovieFilePath(id int64) (string, error) {
-
 	movie, err := c.LookupMovie(id)
 	if err != nil {
 		return "", err

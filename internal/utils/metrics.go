@@ -26,9 +26,6 @@ var InflightJob = prometheus.NewGaugeVec(
 		Help: "The number of jobs in progress",
 	}, []string{"job_name"})
 
-func register() bool {
+func RegisterMetrics() {
 	prometheus.MustRegister(JobTime, JobCount, InflightJob)
-	return true
 }
-
-var success = register()

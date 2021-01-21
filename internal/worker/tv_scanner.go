@@ -10,7 +10,6 @@ import (
 )
 
 func ScanForTVShows(sonarrClient web.SonarrClient, scheduler WorkScheduler) {
-
 	series, err := sonarrClient.GetAllSeries()
 
 	if err != nil {

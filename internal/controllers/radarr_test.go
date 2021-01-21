@@ -35,7 +35,6 @@ func (m mockWorker) EnqueueUnique(jobName string, args map[string]interface{}) (
 }
 
 func TestReturnsErrorForBadPayload(t *testing.T) {
-
 	m := mockWorker{}
 
 	body := bytes.NewBufferString("Not valid json")
@@ -49,7 +48,6 @@ func TestReturnsErrorForBadPayload(t *testing.T) {
 }
 
 func TestReturnsErrorForFailedEnqueue(t *testing.T) {
-
 	m := mockWorker{}
 
 	body := web.RadarrWebhook{EventType: "Download"}
@@ -91,5 +89,4 @@ func TestEnqueuesJobForValidInput(t *testing.T) {
 	_, err = ioutil.ReadAll(w.Body)
 	assert.NoError(t, err)
 	m.AssertExpectations(t)
-
 }

@@ -34,7 +34,6 @@ func (m MockSonarr) GetAllSeries() ([]web.Series, error) {
 }
 
 func TestErrorFromTVScanner(t *testing.T) {
-
 	mockErr := errors.New("mock Error")
 	mockClient := MockSonarr{}
 	mockClient.getAllSeries = func() (series []web.Series, e error) {
@@ -47,7 +46,6 @@ func TestErrorFromTVScanner(t *testing.T) {
 }
 
 func TestSkipIfUnmatchedExtension(t *testing.T) {
-
 	mockSeries := make([]web.Series, 0)
 	mockSeries = append(mockSeries, web.Series{
 		Title: "TestTitle",

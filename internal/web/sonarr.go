@@ -51,7 +51,7 @@ func (c SonarrClientImpl) GetAllEpisodeFiles(seriesId int) ([]SonarrEpisodeFile,
 	vals.Add("seriesId", strconv.Itoa(seriesId))
 	err := c.sonarrGetRequest("api/episodeFile", vals, &response)
 
-	if err == utils.NotFoundError {
+	if err == utils.ErrNotFound {
 		return response, nil
 	}
 	return response, err
@@ -61,7 +61,7 @@ func (c SonarrClientImpl) GetAllSeries() ([]Series, error) {
 	response := make([]Series, 0)
 	err := c.sonarrGetRequest("api/series/", url.Values{}, &response)
 
-	if err == utils.NotFoundError {
+	if err == utils.ErrNotFound {
 		return response, nil
 	}
 	return response, err
@@ -74,7 +74,6 @@ func (c SonarrClientImpl) CheckSonarrCommand(id int) (*SonarrCommand, error) {
 }
 
 func (c SonarrClientImpl) RescanSeries(id int64) (*SonarrCommand, error) {
-
 	payload := make(map[string]interface{})
 
 	payload["name"] = "RescanSeries"
@@ -89,7 +88,7 @@ func (c SonarrClientImpl) RescanSeries(id int64) (*SonarrCommand, error) {
 func (c SonarrClientImpl) LookupTVEpisode(id int64) (*SonarrEpisodeFile, error) {
 	var response SonarrEpisodeFile
 	err := c.sonarrGetRequest(fmt.Sprintf("api/episodeFile/%d", id), url.Values{}, &response)
-	if err == utils.NotFoundError {
+	if err == utils.ErrNotFound {
 		return nil, nil
 	}
 	return &response, err

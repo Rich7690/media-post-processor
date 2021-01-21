@@ -4,12 +4,14 @@ import (
 	"context"
 	"media-web/internal/config"
 	"media-web/internal/controllers"
+	"media-web/internal/utils"
 	"media-web/internal/web"
 	"media-web/internal/worker"
 	"net/http"
 	"net/http/pprof"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/robfig/cron/v3"
@@ -51,7 +53,7 @@ func startScanners(ctx context.Context) {
 	if config.GetConfig().EnableRadarrScanner {
 		scanner := worker.NewMovieScanner(web.GetRadarrClient(), worker.Enqueuer)
 
-		_, err := c.AddFunc("0 0 * * *", func() {
+		_, err := c.AddFunc(config.GetConfig().MovieScanCron, func() {
 			performScan(scanner)
 		})
 		if err != nil {
@@ -60,7 +62,7 @@ func startScanners(ctx context.Context) {
 	}
 
 	if config.GetConfig().EnableSonarrScanner {
-		_, err := c.AddFunc("0 1 * * *", func() {
+		_, err := c.AddFunc(config.GetConfig().TVScanCron, func() {
 			performTVScan()
 		})
 		if err != nil {
@@ -91,18 +93,14 @@ func startWebserver(ctx context.Context) {
 	ro := mux.NewRouter()
 
 	ro.StrictSlash(true)
-	//r.Use(static.ServeRoot("/", "./public"))
+	// r.Use(static.ServeRoot("/", "./public"))
 	ro.HandleFunc("/health", controllers.HealthHandler)
-	/*ro.HandleFunc("/api/movies", mvCtl.HandleCreate).Methods("POST")
-	ro.HandleFunc("/api/movies", mvCtl.HandleList).Methods("GET")
-	ro.HandleFunc("/api/movies/{id}", mvCtl.HandleDelete).Methods("DELETE")
-	ro.HandleFunc("/api/search/movies", mvCtl.HandleSearch).Methods("GET")*/
 	ro.HandleFunc("/api/radarr/webhook", controllers.GetRadarrWebhookHandler(worker.Enqueuer))
 	ro.HandleFunc("/api/sonarr/webhook", controllers.GetSonarrWebhookHandler(worker.Enqueuer)).Methods(http.MethodPost)
 	ro.Handle("/metrics", promhttp.Handler())
 	ro.HandleFunc("/debug/pprof/", pprof.Index).Methods("GET")
 	ro.HandleFunc("/debug/pprof/{name}", pprofHandler())
-	//r.GET("/api/config", controllers.GetConfigHandler)
+	// r.GET("/api/config", controllers.GetConfigHandler)
 
 	serv := http.Server{
 		Addr:         ":8080",
@@ -147,6 +145,8 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
+	utils.RegisterMetrics()
+
 	go startWebserver(ctx)
 
 	if config.GetConfig().EnableWorker {
@@ -157,7 +157,7 @@ func main() {
 
 	log.Debug().Msg("Waiting for exit signal")
 	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt, os.Kill)
+	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
 	<-signalChan
 	cancel()
 	log.Debug().Msg("Exiting.")

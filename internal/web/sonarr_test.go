@@ -13,7 +13,6 @@ import (
 )
 
 func TestRescanTVReturnsSuccess(t *testing.T) {
-
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		payload := make(map[string]interface{})
 
@@ -44,7 +43,6 @@ func TestRescanTVReturnsSuccess(t *testing.T) {
 }
 
 func TestCheckSonarrCommandReturnsSuccess(t *testing.T) {
-
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "GET", r.Method)
 		assert.Equal(t, fmt.Sprintf("/api/command/%d", 1), r.URL.Path)
@@ -70,7 +68,6 @@ func TestCheckSonarrCommandReturnsSuccess(t *testing.T) {
 }
 
 func TestGetAllSeriesReturnsSuccess(t *testing.T) {
-
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "GET", r.Method)
 		assert.Equal(t, "/api/series", r.URL.Path)
@@ -96,7 +93,6 @@ func TestGetAllSeriesReturnsSuccess(t *testing.T) {
 }
 
 func TestGetAllEpisodeFilesReturnsSuccess(t *testing.T) {
-
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "GET", r.Method)
 		assert.Equal(t, "/api/episodeFile", r.URL.Path)
@@ -123,7 +119,6 @@ func TestGetAllEpisodeFilesReturnsSuccess(t *testing.T) {
 }
 
 func TestLookupTVEpisodeReturnsSuccess(t *testing.T) {
-
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "GET", r.Method)
 		assert.Equal(t, fmt.Sprintf("/api/episodeFile/%d", 1), r.URL.Path)

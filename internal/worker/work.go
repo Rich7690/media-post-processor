@@ -1,7 +1,6 @@
 package worker
 
 import (
-	"github.com/floostack/transcoder"
 	"context"
 	"media-web/internal/config"
 	"media-web/internal/constants"
@@ -9,6 +8,8 @@ import (
 	"media-web/internal/utils"
 	"media-web/internal/web"
 	"time"
+
+	"github.com/floostack/transcoder"
 
 	"github.com/gocraft/work"
 	"github.com/gomodule/redigo/redis"
@@ -100,34 +101,34 @@ func (w WorkerPoolImpl) Stop() {
 	w.pool.Stop()
 }
 
-func StartWorkerPool(context WorkerContext, factory WorkerPoolFactory, ctx context.Context) {
+func StartWorkerPool(wctx WorkerContext, factory WorkerPoolFactory, ctx context.Context) {
 	log.Info().Msg("Starting worker pool")
 	// Note: normally the worker context isn't shared and would be unique per job
 	// However, here we use it as a mechanism to inject dependencies into the job handler
-	pool := factory.NewWorkerPool(context, 20, config.GetConfig().JobQueueNamespace, &storage.RedisPool)
-	pool.Middleware(context.Log)
-	pool.Middleware(context.Metrics)
+	pool := factory.NewWorkerPool(wctx, 20, config.GetConfig().JobQueueNamespace, &storage.RedisPool)
+	pool.Middleware(wctx.Log)
+	pool.Middleware(wctx.Metrics)
 
 	pool.JobWithOptions(constants.TranscodeJobType, work.JobOptions{
 		Priority:       1,
 		MaxFails:       3,
 		SkipDead:       false,
 		MaxConcurrency: 1,
-	}, context.TranscodeJobHandler)
+	}, wctx.TranscodeJobHandler)
 
 	pool.JobWithOptions(constants.UpdateSonarrJobName, work.JobOptions{
 		Priority:       2,
 		MaxFails:       3,
 		SkipDead:       false,
 		MaxConcurrency: 5,
-	}, context.UpdateTVShow)
+	}, wctx.UpdateTVShow)
 
 	pool.JobWithOptions(constants.UpdateRadarrJobName, work.JobOptions{
 		Priority:       2,
 		MaxFails:       3,
 		SkipDead:       false,
 		MaxConcurrency: 5,
-	}, context.UpdateMovie)
+	}, wctx.UpdateMovie)
 
 	// Start processing jobs
 	pool.Start()

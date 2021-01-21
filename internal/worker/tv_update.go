@@ -11,7 +11,6 @@ import (
 )
 
 func (c *WorkerContext) UpdateTVShow(job *work.Job) error {
-
 	seriesId := job.ArgInt64(constants.SeriesIdKey)
 
 	cmd, err := c.SonarrClient.RescanSeries(seriesId)

@@ -9,6 +9,9 @@ on:
     paths-ignore:
       - 'README.md'
 jobs:
+  lint:
+    - name: Run golangci-lint
+      uses: golangci/golangci-lint-action@v1.2.1
   test:
     name: Test with Coverage
     runs-on: ubuntu-latest

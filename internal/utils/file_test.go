@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"os"
+	"io/ioutil"
 	"testing"
 )
 
@@ -12,21 +12,19 @@ func TestFileDoesntExist(t *testing.T) {
 		t.Log("File should not have existed")
 		t.Fail()
 	}
-
 }
 
 func TestFileExists(t *testing.T) {
-	f, err := os.Create("/tmp/dat2")
+	f, err := ioutil.TempFile("/tmp", "DAT2")
 	if err != nil {
 		t.Fail()
 	}
 	defer f.Close()
 
-	exist := FileExists("/tmp/dat2")
+	exist := FileExists(f.Name())
 
 	if !exist {
 		t.Log("File should have existed")
 		t.Fail()
 	}
-
 }

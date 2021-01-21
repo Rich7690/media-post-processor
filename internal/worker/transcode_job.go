@@ -14,7 +14,6 @@ import (
 	"github.com/gocraft/work"
 	"github.com/rs/zerolog/log"
 
-
 	"github.com/floostack/transcoder"
 	"github.com/floostack/transcoder/ffmpeg"
 )
@@ -127,7 +126,7 @@ func (c *WorkerContext) TranscodeJobHandler(job *work.Job) error {
 	}
 
 	if prog != 100 {
-		return errors.New("Failed to get 100% progress on conversion. Keeping old file")
+		return errors.New("failed to get 100% progress on conversion. Keeping old file")
 	}
 
 	log.Info().Msg("Deleting old file")
@@ -151,7 +150,6 @@ func (c *WorkerContext) TranscodeJobHandler(job *work.Job) error {
 		} else {
 			log.Debug().Msg("Created job: " + updateJob.ID)
 		}
-
 	} else if transcodeType == constants.Movie {
 		updateJob, err := c.Enqueuer.EnqueueUnique("update-radarr", work.Q{
 			constants.MovieIdKey: id,

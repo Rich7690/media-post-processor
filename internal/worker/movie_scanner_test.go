@@ -46,8 +46,7 @@ func (m *mockWorker) EnqueueUnique(jobName string, args map[string]interface{}) 
 }
 
 func TestErrorFromScanner(t *testing.T) {
-
-	mockErr := errors.New("Error!")
+	mockErr := errors.New("error!")
 	mockClient := MockRadarr{}
 	mockClient.getAllMovies = func() (movies []web.RadarrMovie, e error) {
 		return nil, mockErr
@@ -59,11 +58,9 @@ func TestErrorFromScanner(t *testing.T) {
 
 	assert.Error(t, err)
 	w.AssertNotCalled(t, "EnqueueUnique")
-
 }
 
 func TestDoesNothingIfNoMovies(t *testing.T) {
-
 	mockClient := MockRadarr{}
 	mockClient.getAllMovies = func() (movies []web.RadarrMovie, e error) {
 		return make([]web.RadarrMovie, 1), nil
@@ -80,7 +77,6 @@ func TestDoesNothingIfNoMovies(t *testing.T) {
 }
 
 func TestDoesNothingIfNotDownloaded(t *testing.T) {
-
 	mockClient := MockRadarr{}
 	mockClient.getAllMovies = func() (movies []web.RadarrMovie, e error) {
 		movieList := make([]web.RadarrMovie, 1)
@@ -99,7 +95,6 @@ func TestDoesNothingIfNotDownloaded(t *testing.T) {
 }
 
 func TestSkipsIfAlreadyRightFormat(t *testing.T) {
-
 	mockClient := MockRadarr{}
 	mockClient.getAllMovies = func() (movies []web.RadarrMovie, e error) {
 		movieList := append(movies, web.RadarrMovie{Downloaded: true, MovieFile: web.MovieFile{RelativePath: "test.mp4"}})
@@ -117,10 +112,9 @@ func TestSkipsIfAlreadyRightFormat(t *testing.T) {
 }
 
 func TestEnqueueIfProperFormat(t *testing.T) {
-
 	mockClient := MockRadarr{}
 	mockClient.getAllMovies = func() (movies []web.RadarrMovie, e error) {
-		movieList := []web.RadarrMovie{web.RadarrMovie{Downloaded: true, MovieFile: web.MovieFile{RelativePath: "test.mkv"}}}
+		movieList := []web.RadarrMovie{{Downloaded: true, MovieFile: web.MovieFile{RelativePath: "test.mkv"}}}
 		return movieList, nil
 	}
 	w := mockWorker{}
@@ -133,14 +127,12 @@ func TestEnqueueIfProperFormat(t *testing.T) {
 		t.Error("Error returned")
 	}
 	w.AssertExpectations(t)
-
 }
 
 func TestEnqueueAndIgnoresEnqueueError(t *testing.T) {
-
 	mockClient := MockRadarr{}
 	mockClient.getAllMovies = func() (movies []web.RadarrMovie, e error) {
-		movieList := []web.RadarrMovie{web.RadarrMovie{Downloaded: true, MovieFile: web.MovieFile{RelativePath: "test.mkv"}}}
+		movieList := []web.RadarrMovie{{Downloaded: true, MovieFile: web.MovieFile{RelativePath: "test.mkv"}}}
 		return movieList, nil
 	}
 	w := mockWorker{}
@@ -152,5 +144,4 @@ func TestEnqueueAndIgnoresEnqueueError(t *testing.T) {
 		t.Error("Error returned")
 	}
 	w.AssertExpectations(t)
-
 }

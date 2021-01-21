@@ -42,7 +42,6 @@ func (w MockWorkerPoolFactory) NewWorkerPool(ctx interface{}, concurrency uint, 
 }
 
 func TestWorkerPoolSetup(t *testing.T) {
-
 	ctx, cancel := context2.WithCancel(context2.Background())
 	cancel()
 	var start = false

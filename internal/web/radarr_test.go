@@ -13,7 +13,6 @@ import (
 )
 
 func TestRescanMovieReturnsSuccess(t *testing.T) {
-
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		payload := make(map[string]interface{})
 
@@ -44,7 +43,6 @@ func TestRescanMovieReturnsSuccess(t *testing.T) {
 }
 
 func TestCheckRadarrCommandReturnsSuccess(t *testing.T) {
-
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "GET", r.Method)
 		assert.Equal(t, fmt.Sprintf("/api/command/%d", 1), r.URL.Path)
@@ -70,7 +68,6 @@ func TestCheckRadarrCommandReturnsSuccess(t *testing.T) {
 }
 
 func TestLookupMovieReturnsSuccess(t *testing.T) {
-
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "GET", r.Method)
 		assert.Equal(t, fmt.Sprintf("/api/movie/%d", 1), r.URL.Path)
@@ -95,7 +92,6 @@ func TestLookupMovieReturnsSuccess(t *testing.T) {
 }
 
 func TestGetAllMoviesReturnsSuccess(t *testing.T) {
-
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "GET", r.Method)
 		assert.Equal(t, "/api/movie", r.URL.Path)
@@ -121,7 +117,6 @@ func TestGetAllMoviesReturnsSuccess(t *testing.T) {
 }
 
 func TestGetAllMoviesEmptyReturnsSuccess(t *testing.T) {
-
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "GET", r.Method)
 		assert.Equal(t, "/api/movie", r.URL.Path)
@@ -143,7 +138,6 @@ func TestGetAllMoviesEmptyReturnsSuccess(t *testing.T) {
 }
 
 func TestGetAllMoviesErrorReturnserror(t *testing.T) {
-
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "GET", r.Method)
 		assert.Equal(t, "/api/movie", r.URL.Path)

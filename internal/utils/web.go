@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	NotFoundError = errors.New("http status not found returned")
+	ErrNotFound = errors.New("http status not found returned")
 )
 
 type WebClient interface {
@@ -35,7 +35,7 @@ func (c WebClientImpl) PostRequest(url url.URL, path string, values url.Values, 
 	if err != nil {
 		return err
 	}
-
+	defer resp.Body.Close()
 	if resp.StatusCode >= http.StatusBadRequest {
 		return errors.New("bad status code from server: " + strconv.Itoa(resp.StatusCode))
 	}
@@ -48,11 +48,13 @@ func (c WebClientImpl) PostRequest(url url.URL, path string, values url.Values, 
 
 func (c WebClientImpl) GetRequest(url url.URL, path string, values url.Values, respObject interface{}) error {
 	resp, body, err := makeGetRequest(url, path, values)
+
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusNotFound {
-		return NotFoundError
+		return ErrNotFound
 	}
 	if resp.StatusCode >= http.StatusBadRequest {
 		return errors.New("bad status code from server: " + strconv.Itoa(resp.StatusCode))

@@ -37,7 +37,6 @@ func GetSonarrWebhookHandler(scheduler worker.WorkScheduler) func(w http.Respons
 			}
 
 			log.Info().Msgf("Enqueued job: %s", job.ID)
-			break
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(&body)

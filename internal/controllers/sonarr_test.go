@@ -18,7 +18,6 @@ import (
 )
 
 func TestSonarrReturnsErrorForBadPayload(t *testing.T) {
-
 	m := mockWorker{}
 
 	body := bytes.NewBufferString("Not valid json")
@@ -32,7 +31,6 @@ func TestSonarrReturnsErrorForBadPayload(t *testing.T) {
 }
 
 func TestSonarrReturnsErrorForFailedEnqueue(t *testing.T) {
-
 	m := mockWorker{}
 
 	body := web.SonarrWebhook{EventType: "Download"}
@@ -53,7 +51,6 @@ func TestSonarrReturnsErrorForFailedEnqueue(t *testing.T) {
 }
 
 func TestSonarrEnqueuesJobForValidInput(t *testing.T) {
-
 	m := mockWorker{}
 
 	body := web.SonarrWebhook{EventType: "Download"}
