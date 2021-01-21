@@ -167,17 +167,7 @@ type SonarrWebhook struct {
 }
 
 type RadarrMovie struct {
-	Title             string `json:"title"`
-	AlternativeTitles []struct {
-		SourceType string `json:"sourceType"`
-		MovieID    int    `json:"movieId"`
-		Title      string `json:"title"`
-		SourceID   int    `json:"sourceId"`
-		Votes      int    `json:"votes"`
-		VoteCount  int    `json:"voteCount"`
-		Language   string `json:"language"`
-		ID         int    `json:"id"`
-	} `json:"alternativeTitles"`
+	Title                 string    `json:"title"`
 	SecondaryYearSourceID int       `json:"secondaryYearSourceId"`
 	SortTitle             string    `json:"sortTitle"`
 	SizeOnDisk            int64     `json:"sizeOnDisk"`
