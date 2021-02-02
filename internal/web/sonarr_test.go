@@ -15,7 +15,7 @@ import (
 func TestRescanTVReturnsSuccess(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		payload := make(map[string]interface{})
-
+		//nolint:errcheck
 		json.NewDecoder(r.Body).Decode(&payload)
 
 		assert.Equal(t, "POST", r.Method)
@@ -32,11 +32,11 @@ func TestRescanTVReturnsSuccess(t *testing.T) {
 
 	parsed, _ := url.Parse(srv.URL)
 	client := SonarrClientImpl{
-		webClient:          utils.GetWebClient(),
-		BaseSonarrEndpoint: *parsed,
+		webClient: utils.GetWebClient(parsed),
 	}
 
-	cmd, err := client.RescanSeries(1)
+	id := int64(1)
+	cmd, err := client.RescanSeries(&id)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, cmd.ID)
@@ -57,8 +57,7 @@ func TestCheckSonarrCommandReturnsSuccess(t *testing.T) {
 
 	parsed, _ := url.Parse(srv.URL)
 	client := SonarrClientImpl{
-		webClient:          utils.GetWebClient(),
-		BaseSonarrEndpoint: *parsed,
+		webClient: utils.GetWebClient(parsed),
 	}
 
 	cmd, err := client.CheckSonarrCommand(1)
@@ -82,8 +81,7 @@ func TestGetAllSeriesReturnsSuccess(t *testing.T) {
 
 	parsed, _ := url.Parse(srv.URL)
 	client := SonarrClientImpl{
-		webClient:          utils.GetWebClient(),
-		BaseSonarrEndpoint: *parsed,
+		webClient: utils.GetWebClient(parsed),
 	}
 
 	series, err := client.GetAllSeries()
@@ -108,8 +106,7 @@ func TestGetAllEpisodeFilesReturnsSuccess(t *testing.T) {
 
 	parsed, _ := url.Parse(srv.URL)
 	client := SonarrClientImpl{
-		webClient:          utils.GetWebClient(),
-		BaseSonarrEndpoint: *parsed,
+		webClient: utils.GetWebClient(parsed),
 	}
 
 	series, err := client.GetAllEpisodeFiles(1)
@@ -132,8 +129,7 @@ func TestLookupTVEpisodeReturnsSuccess(t *testing.T) {
 
 	parsed, _ := url.Parse(srv.URL)
 	client := SonarrClientImpl{
-		webClient:          utils.GetWebClient(),
-		BaseSonarrEndpoint: *parsed,
+		webClient: utils.GetWebClient(parsed),
 	}
 
 	episodeFile, err := client.LookupTVEpisode(1)

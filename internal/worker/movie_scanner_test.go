@@ -11,22 +11,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func (c MockRadarr) CheckRadarrCommand(id int) (*web.RadarrCommand, error) {
-	return c.checkRadarrCommand(id)
-}
-func (c MockRadarr) RescanMovie(id int64) (*web.RadarrCommand, error) {
-	return c.rescanMovie(id)
-}
-func (c MockRadarr) LookupMovie(id int64) (*web.RadarrMovie, error) {
-	return c.lookupMovie(id)
-}
-func (c MockRadarr) GetAllMovies() ([]web.RadarrMovie, error) {
-	return c.getAllMovies()
-}
-func (c MockRadarr) GetMovieFilePath(id int64) (string, error) {
-	return c.getMovieFilePath(id)
-}
-
 type mockWorker struct {
 	mock.Mock
 }
@@ -46,7 +30,7 @@ func (m *mockWorker) EnqueueUnique(jobName string, args map[string]interface{}) 
 }
 
 func TestErrorFromScanner(t *testing.T) {
-	mockErr := errors.New("error!")
+	mockErr := errors.New("error")
 	mockClient := MockRadarr{}
 	mockClient.getAllMovies = func() (movies []web.RadarrMovie, e error) {
 		return nil, mockErr

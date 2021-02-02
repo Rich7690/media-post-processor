@@ -64,7 +64,7 @@ func TestWorkerPoolSetup(t *testing.T) {
 		return nil
 	})
 
-	StartWorkerPool(context, MockWorkerPoolFactory{makePool: makePool}, ctx)
+	StartWorkerPool(ctx, context, MockWorkerPoolFactory{makePool: makePool})
 
 	assert.NoError(t, err)
 	assert.True(t, start)

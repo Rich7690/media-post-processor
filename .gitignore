@@ -20,3 +20,4 @@ profile.cov
 /bin/build-copy.sh
 test.db
 .env
+run.sh

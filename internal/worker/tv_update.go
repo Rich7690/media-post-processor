@@ -11,9 +11,9 @@ import (
 )
 
 func (c *WorkerContext) UpdateTVShow(job *work.Job) error {
-	seriesId := job.ArgInt64(constants.SeriesIdKey)
+	seriesID := job.ArgInt64(constants.SeriesIdKey)
 
-	cmd, err := c.SonarrClient.RescanSeries(seriesId)
+	cmd, err := c.SonarrClient.RescanSeries(&seriesID)
 
 	if err != nil {
 		log.Err(err).Msg("Error rescanning series")
@@ -21,20 +21,20 @@ func (c *WorkerContext) UpdateTVShow(job *work.Job) error {
 	}
 
 	for count := 0; count < 5; count++ {
-		result, err := c.SonarrClient.CheckSonarrCommand(cmd.ID)
+		result, lerr := c.SonarrClient.CheckSonarrCommand(cmd.ID)
 
-		if err == nil {
+		if lerr == nil {
 			if strings.Contains(result.State, "complete") {
 				log.Info().Msg("Rescan complete for: " + strconv.Itoa(cmd.ID))
 				return nil
-			} else {
-				log.Info().Msg("Rescan not complete yet for: " + strconv.Itoa(cmd.ID))
 			}
+			log.Info().Msg("Rescan not complete yet for: " + strconv.Itoa(cmd.ID))
 		} else {
-			log.Err(err).Msg("Error checking state of command: " + strconv.Itoa(cmd.ID))
+			log.Err(lerr).Msg("Error checking state of command: " + strconv.Itoa(cmd.ID))
 		}
 
 		c.Sleep(time.Second * 15)
+		err = lerr
 	}
 
 	return err

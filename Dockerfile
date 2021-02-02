@@ -10,7 +10,8 @@ WORKDIR /app
 RUN apk update
 RUN apk add gcc libstdc++ libc-dev
 # We want to build our application's binary executable
-RUN go build -a ./cmd/web/main.go
+RUN go build -o main -a ./cmd/web/main.go
+RUN go build -o test -a ./cmd/test/main.go
 
 # the lightweight scratch image we'll
 # run our application within
@@ -18,6 +19,7 @@ FROM alpine:3.12 AS production
 # We have to copy the output from our
 # builder stage to our production stage
 COPY --from=builder /app/main .
+COPY --from=builder /app/test .
 COPY ./public ./public
 
 RUN apk update

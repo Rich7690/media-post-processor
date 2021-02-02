@@ -11,12 +11,12 @@ import (
 )
 
 func (c *WorkerContext) UpdateMovie(job *work.Job) error {
-	movieId := job.ArgInt64(constants.MovieIdKey)
+	movieID := job.ArgInt64(constants.MovieIdKey)
 
-	cmd, err := c.RadarrClient.RescanMovie(movieId)
+	cmd, err := c.RadarrClient.RescanMovie(movieID)
 
 	if err != nil {
-		log.Err(err).Msg("Error rescanning movie: " + strconv.Itoa(int(movieId)))
+		log.Err(err).Msg("Error rescanning movie: " + strconv.Itoa(int(movieID)))
 		return err
 	}
 
@@ -27,9 +27,8 @@ func (c *WorkerContext) UpdateMovie(job *work.Job) error {
 			if strings.Contains(result.State, "complete") {
 				log.Info().Msgf("Rescan complete for: %d", cmd.ID)
 				return nil
-			} else {
-				log.Info().Msgf("Rescan not complete yet for: %d", cmd.ID)
 			}
+			log.Info().Msgf("Rescan not complete yet for: %d", cmd.ID)
 		} else {
 			log.Err(err).Msg("Error checking status of command")
 		}

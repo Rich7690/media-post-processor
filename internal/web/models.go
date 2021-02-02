@@ -219,14 +219,12 @@ type MovieFile struct {
 	ReleaseGroup string    `json:"releaseGroup"`
 	Quality      struct {
 		Quality struct {
-			ID         int    `json:"id"`
-			Name       string `json:"name"`
-			Source     string `json:"source"`
-			Resolution string `json:"resolution"`
-			Modifier   string `json:"modifier"`
+			ID       int    `json:"id"`
+			Name     string `json:"name"`
+			Source   string `json:"source"`
+			Modifier string `json:"modifier"`
 		} `json:"quality"`
-		CustomFormats []interface{} `json:"customFormats"`
-		Revision      struct {
+		Revision struct {
 			Version int `json:"version"`
 			Real    int `json:"real"`
 		} `json:"revision"`

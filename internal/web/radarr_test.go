@@ -15,7 +15,7 @@ import (
 func TestRescanMovieReturnsSuccess(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		payload := make(map[string]interface{})
-
+		//nolint:errcheck
 		json.NewDecoder(r.Body).Decode(&payload)
 
 		assert.Equal(t, "POST", r.Method)
@@ -32,8 +32,7 @@ func TestRescanMovieReturnsSuccess(t *testing.T) {
 
 	parsed, _ := url.Parse(srv.URL)
 	client := RadarrClientImpl{
-		webClient:          utils.GetWebClient(),
-		RadarrBaseEndpoint: *parsed,
+		webClient: utils.GetWebClient(parsed),
 	}
 
 	cmd, err := client.RescanMovie(1)
@@ -51,14 +50,14 @@ func TestCheckRadarrCommandReturnsSuccess(t *testing.T) {
 			State: "complete",
 			ID:    1,
 		}
+		//nolint:errcheck
 		json.NewEncoder(w).Encode(&cmd)
 	}))
 	defer srv.Close()
 
 	parsed, _ := url.Parse(srv.URL)
 	client := RadarrClientImpl{
-		webClient:          utils.GetWebClient(),
-		RadarrBaseEndpoint: *parsed,
+		webClient: utils.GetWebClient(parsed),
 	}
 
 	cmd, err := client.CheckRadarrCommand(1)
@@ -75,14 +74,14 @@ func TestLookupMovieReturnsSuccess(t *testing.T) {
 		cmd := RadarrMovie{
 			ID: 1,
 		}
+		//nolint:errcheck
 		json.NewEncoder(w).Encode(&cmd)
 	}))
 	defer srv.Close()
 
 	parsed, _ := url.Parse(srv.URL)
 	client := RadarrClientImpl{
-		webClient:          utils.GetWebClient(),
-		RadarrBaseEndpoint: *parsed,
+		webClient: utils.GetWebClient(parsed),
 	}
 
 	movie, err := client.LookupMovie(1)
@@ -106,8 +105,7 @@ func TestGetAllMoviesReturnsSuccess(t *testing.T) {
 
 	parsed, _ := url.Parse(srv.URL)
 	client := RadarrClientImpl{
-		webClient:          utils.GetWebClient(),
-		RadarrBaseEndpoint: *parsed,
+		webClient: utils.GetWebClient(parsed),
 	}
 
 	movie, err := client.GetAllMovies()
@@ -127,8 +125,7 @@ func TestGetAllMoviesEmptyReturnsSuccess(t *testing.T) {
 
 	parsed, _ := url.Parse(srv.URL)
 	client := RadarrClientImpl{
-		webClient:          utils.GetWebClient(),
-		RadarrBaseEndpoint: *parsed,
+		webClient: utils.GetWebClient(parsed),
 	}
 
 	movie, err := client.GetAllMovies()
@@ -148,8 +145,7 @@ func TestGetAllMoviesErrorReturnserror(t *testing.T) {
 
 	parsed, _ := url.Parse(srv.URL)
 	client := RadarrClientImpl{
-		webClient:          utils.GetWebClient(),
-		RadarrBaseEndpoint: *parsed,
+		webClient: utils.GetWebClient(parsed),
 	}
 
 	_, err := client.GetAllMovies()

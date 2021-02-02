@@ -1,0 +1,108 @@
+{
+    "level": "info",
+    "mov": {
+        "title": "Me Before You",
+        "secondaryYearSourceId": 0,
+        "sortTitle": "me before you",
+        "sizeOnDisk": 2982011105,
+        "status": "released",
+        "overview": "A small town girl is caught between dead-end jobs. A high-profile, successful man becomes wheelchair bound following an accident. The man decides his life is not worth living until the girl is hired for six months to be his new caretaker. Worlds apart and trapped together by circumstance, the two get off to a rocky start. But the girl becomes determined to prove to the man that life is worth living and as they embark on a series of adventures together, each finds their world changing in ways neither of them could begin to imagine.",
+        "inCinemas": "2016-06-01T00:00:00Z",
+        "physicalRelease": "2016-10-18T00:00:00Z",
+        "images": [
+            {
+                "coverType": "poster",
+                "url": "/radarr/MediaCover/579/poster.jpg?lastWrite=637455840956414566"
+            },
+            {
+                "coverType": "fanart",
+                "url": "/radarr/MediaCover/579/fanart.jpg?lastWrite=637455840956774571"
+            }
+        ],
+        "website": "http://www.mebeforeyoumovie.net",
+        "downloaded": true,
+        "year": 2016,
+        "hasFile": true,
+        "youTubeTrailerId": "T0MmkG_nG1U",
+        "studio": "New Line Cinema",
+        "path": "/storage/Media/Movies/Me Before You (2016)",
+        "profileId": 1,
+        "pathState": "",
+        "monitored": true,
+        "minimumAvailability": "released",
+        "isAvailable": true,
+        "folderName": "/storage/Media/Movies/Me Before You (2016)",
+        "runtime": 110,
+        "lastInfoSync": "2021-01-24T20:49:06.595099Z",
+        "cleanTitle": "mebeforeyou",
+        "imdbId": "tt2674426",
+        "tmdbId": 296096,
+        "titleSlug": "296096",
+        "genres": [
+            "Drama",
+            "Romance"
+        ],
+        "tags": [],
+        "added": "2021-01-07T02:41:35.1819916Z",
+        "ratings": {
+            "votes": 8528,
+            "value": 7.8
+        },
+        "movieFile": {
+            "movieId": 0,
+            "relativePath": "Me Before You 2016.mkv",
+            "size": 2982011105,
+            "dateAdded": "2021-01-07T03:57:57.4641896Z",
+            "sceneName": "",
+            "releaseGroup": "JYK",
+            "quality": {
+                "quality": {
+                    "id": 7,
+                    "name": "Bluray-1080p",
+                    "source": "bluray",
+                    "modifier": "none"
+                },
+                "revision": {
+                    "version": 1,
+                    "real": 0
+                }
+            },
+            "edition": "",
+            "mediaInfo": {
+                "containerFormat": "Matroska",
+                "videoFormat": "AVC",
+                "videoCodecID": "V_MPEG4/ISO/AVC",
+                "videoProfile": "High@L4.1",
+                "videoCodecLibrary": "x264 - core 148 r2638 7599210",
+                "videoBitrate": 2850000,
+                "videoBitDepth": 8,
+                "videoMultiViewCount": 0,
+                "videoColourPrimaries": "",
+                "videoTransferCharacteristics": "",
+                "width": 1920,
+                "height": 804,
+                "audioFormat": "DTS",
+                "audioCodecID": "A_DTS",
+                "audioCodecLibrary": "",
+                "audioAdditionalFeatures": "",
+                "audioBitrate": 754500,
+                "runTime": "01:50:14.5250000",
+                "audioStreamCount": 1,
+                "audioChannels": 0,
+                "audioChannelPositions": "3/2/0.1",
+                "audioChannelPositionsText": "",
+                "audioProfile": "",
+                "videoFps": 23.976,
+                "audioLanguages": "English",
+                "subtitles": "",
+                "scanType": "Progressive",
+                "schemaRevision": 6
+            },
+            "id": 1026
+        },
+        "qualityProfileId": 1,
+        "id": 579
+    },
+    "time": 1611951895926,
+    "message": "check"
+}

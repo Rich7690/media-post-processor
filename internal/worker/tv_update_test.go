@@ -13,7 +13,7 @@ import (
 
 func TestRescanSeriesErrorReturns(t *testing.T) {
 	mockClient := MockSonarr{}
-	mockClient.rescanSeries = func(id int64) (command *web.SonarrCommand, e error) {
+	mockClient.rescanSeries = func(id *int64) (command *web.SonarrCommand, e error) {
 		return nil, errors.New("test error")
 	}
 	context := WorkerContext{
@@ -28,7 +28,7 @@ func TestRescanSeriesErrorReturns(t *testing.T) {
 func TestRescanNoErrorOnNonCompleteAfterAllTries(t *testing.T) {
 	mockClient := MockSonarr{}
 	callRescan := false
-	mockClient.rescanSeries = func(id int64) (*web.SonarrCommand, error) {
+	mockClient.rescanSeries = func(id *int64) (*web.SonarrCommand, error) {
 		callRescan = true
 		return &web.SonarrCommand{ID: 1}, nil
 	}
@@ -52,7 +52,7 @@ func TestRescanNoErrorOnNonCompleteAfterAllTries(t *testing.T) {
 func TestRescanNoErrorOnComplete(t *testing.T) {
 	mockClient := MockSonarr{}
 	callRescan := false
-	mockClient.rescanSeries = func(id int64) (*web.SonarrCommand, error) {
+	mockClient.rescanSeries = func(id *int64) (*web.SonarrCommand, error) {
 		callRescan = true
 		return &web.SonarrCommand{ID: 1}, nil
 	}
@@ -76,7 +76,7 @@ func TestRescanNoErrorOnComplete(t *testing.T) {
 func TestRescanNoErrorCheckCommand(t *testing.T) {
 	mockClient := MockSonarr{}
 	callRescan := false
-	mockClient.rescanSeries = func(id int64) (*web.SonarrCommand, error) {
+	mockClient.rescanSeries = func(id *int64) (*web.SonarrCommand, error) {
 		callRescan = true
 		return &web.SonarrCommand{ID: 1}, nil
 	}

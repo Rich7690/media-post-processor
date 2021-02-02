@@ -19,18 +19,19 @@ var (
 )
 
 type WebClient interface {
-	GetRequest(url url.URL, path string, values url.Values, respObject interface{}) error
-	PostRequest(url url.URL, path string, values url.Values, body interface{}, respObject interface{}) error
-	MakeGetRequest(url url.URL, path string, values url.Values) (*http.Response, []byte, error)
-	MakePostRequest(url url.URL, path string, values url.Values, body interface{}) (*http.Response, []byte, error)
+	GetRequest(path string, values url.Values, respObject interface{}) error
+	PostRequest(path string, values url.Values, body interface{}, respObject interface{}) error
+	MakeGetRequest(path string, values url.Values) (*http.Response, []byte, error)
+	MakePostRequest(path string, values url.Values, body interface{}) (*http.Response, []byte, error)
 }
 
 type WebClientImpl struct {
 	client http.Client
+	base   *url.URL
 }
 
-func (c WebClientImpl) PostRequest(url url.URL, path string, values url.Values, body interface{}, respObject interface{}) error {
-	resp, respBytes, err := makePostRequest(url, path, values, body)
+func (c WebClientImpl) PostRequest(path string, values url.Values, body, respObject interface{}) error {
+	resp, respBytes, err := makePostRequest(c.base, path, values, body)
 
 	if err != nil {
 		return err
@@ -46,8 +47,8 @@ func (c WebClientImpl) PostRequest(url url.URL, path string, values url.Values, 
 	return err
 }
 
-func (c WebClientImpl) GetRequest(url url.URL, path string, values url.Values, respObject interface{}) error {
-	resp, body, err := makeGetRequest(url, path, values)
+func (c WebClientImpl) GetRequest(path string, values url.Values, respObject interface{}) error {
+	resp, body, err := makeGetRequest(c.base, path, values)
 
 	if err != nil {
 		return err
@@ -66,42 +67,42 @@ func (c WebClientImpl) GetRequest(url url.URL, path string, values url.Values, r
 	return err
 }
 
-func GetWebClient() WebClient {
-	return WebClientImpl{client: netClient}
+func GetWebClient(base *url.URL) WebClient {
+	return WebClientImpl{client: netClient, base: base}
 }
 
-func (c WebClientImpl) MakeGetRequest(baseUrl url.URL, path string, values url.Values) (*http.Response, []byte, error) {
-	return makeGetRequest(baseUrl, path, values)
+func (c WebClientImpl) MakeGetRequest(path string, values url.Values) (*http.Response, []byte, error) {
+	return makeGetRequest(c.base, path, values)
 }
 
-func (c WebClientImpl) MakePostRequest(baseUrl url.URL, path string, values url.Values, requestBody interface{}) (*http.Response, []byte, error) {
-	return makePostRequest(baseUrl, path, values, requestBody)
+func (c WebClientImpl) MakePostRequest(path string, values url.Values, requestBody interface{}) (*http.Response, []byte, error) {
+	return makePostRequest(c.base, path, values, requestBody)
 }
 
 var netClient = http.Client{
 	Timeout: time.Second * 10,
 }
 
-func makePostRequest(base url.URL, path string, values url.Values, body interface{}) (*http.Response, []byte, error) {
+func makePostRequest(base *url.URL, path string, values url.Values, body interface{}) (*http.Response, []byte, error) {
 	log.Trace().Str("base", base.String()).Str("path", path).Msg("preparing post")
 	value, err := json.Marshal(body)
 
 	if err != nil {
 		return nil, nil, err
 	}
-
+	baseURL := *base
 	buf := bytes.NewBuffer(value)
-	finalPath := path2.Join(base.Path, path)
-	base.Path = finalPath
-	currentValues := base.Query()
+	finalPath := path2.Join(baseURL.Path, path)
+	baseURL.Path = finalPath
+	currentValues := baseURL.Query()
 	for k, v := range values {
 		for _, value := range v {
 			currentValues.Add(k, value)
 		}
 	}
-	base.RawQuery = currentValues.Encode()
-	log.Trace().Str("url", base.String()).Msg("Making POST request")
-	resp, err := netClient.Post(base.String(), "application/json", buf)
+	baseURL.RawQuery = currentValues.Encode()
+	log.Trace().Str("url", baseURL.String()).Msg("Making POST request")
+	resp, err := netClient.Post(baseURL.String(), "application/json", buf)
 
 	if err != nil {
 		return nil, nil, err
@@ -113,7 +114,8 @@ func makePostRequest(base url.URL, path string, values url.Values, body interfac
 	return resp, response, err
 }
 
-func makeGetRequest(base url.URL, path string, values url.Values) (*http.Response, []byte, error) {
+func makeGetRequest(baseURL *url.URL, path string, values url.Values) (*http.Response, []byte, error) {
+	base := *baseURL
 	log.Trace().Str("base", base.String()).Str("path", path).Msg("preparing get")
 	finalPath := path2.Join(base.Path, path)
 	base.Path = finalPath

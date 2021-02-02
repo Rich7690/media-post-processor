@@ -24,7 +24,7 @@ import (
 
 func startWorker(ctx context.Context) {
 	log.Info().Msg("Starting worker.")
-	worker.StartWorkerPool(worker.GetWorkerContext(), worker.WorkerPoolFactoryImpl{}, ctx)
+	worker.StartWorkerPool(ctx, worker.GetWorkerContext(), worker.WorkerPoolFactoryImpl{})
 }
 
 func performTVScan() {
@@ -88,23 +88,23 @@ func recoverHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
+const Timeout = 4 * time.Second
+
 func startWebserver(ctx context.Context) {
 	log.Info().Msg("Starting server.")
 	ro := mux.NewRouter()
 
 	ro.StrictSlash(true)
-	// r.Use(static.ServeRoot("/", "./public"))
 	ro.HandleFunc("/health", controllers.HealthHandler)
 	ro.HandleFunc("/api/radarr/webhook", controllers.GetRadarrWebhookHandler(worker.Enqueuer))
 	ro.HandleFunc("/api/sonarr/webhook", controllers.GetSonarrWebhookHandler(worker.Enqueuer)).Methods(http.MethodPost)
 	ro.Handle("/metrics", promhttp.Handler())
 	ro.HandleFunc("/debug/pprof/", pprof.Index).Methods("GET")
 	ro.HandleFunc("/debug/pprof/{name}", pprofHandler())
-	// r.GET("/api/config", controllers.GetConfigHandler)
 
 	serv := http.Server{
 		Addr:         ":8080",
-		Handler:      recoverHandler(http.TimeoutHandler(ro, 4*time.Second, "Failed to handle request in time")),
+		Handler:      recoverHandler(http.TimeoutHandler(ro, Timeout, "Failed to handle request in time")),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 5 * time.Second,
 		IdleTimeout:  30 * time.Second,

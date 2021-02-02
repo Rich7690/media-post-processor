@@ -9,30 +9,6 @@ import (
 	"gopkg.in/go-playground/assert.v1"
 )
 
-func (m MockSonarr) GetAllEpisodeFiles(seriesId int) ([]web.SonarrEpisodeFile, error) {
-	return m.getAllEpisodeFiles(seriesId)
-}
-
-func (m MockSonarr) CheckSonarrCommand(id int) (*web.SonarrCommand, error) {
-	return m.checkSonarrCommand(id)
-}
-
-func (m MockSonarr) RescanSeries(id int64) (*web.SonarrCommand, error) {
-	return m.rescanSeries(id)
-}
-
-func (m MockSonarr) LookupTVEpisode(id int64) (*web.SonarrEpisodeFile, error) {
-	return m.lookupTVEpisode(id)
-}
-
-func (m MockSonarr) GetEpisodeFilePath(id int64) (string, int, error) {
-	return m.getEpisodeFilePath(id)
-}
-
-func (m MockSonarr) GetAllSeries() ([]web.Series, error) {
-	return m.getAllSeries()
-}
-
 func TestErrorFromTVScanner(t *testing.T) {
 	mockErr := errors.New("mock Error")
 	mockClient := MockSonarr{}

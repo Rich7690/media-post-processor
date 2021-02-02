@@ -20,7 +20,7 @@ type mockWorker struct {
 	mock.Mock
 }
 
-func (m mockWorker) EnqueueUnique(jobName string, args map[string]interface{}) (*work.Job, error) {
+func (m *mockWorker) EnqueueUnique(jobName string, args map[string]interface{}) (*work.Job, error) {
 	resp := m.Called(jobName, args)
 
 	arg := resp.Get(0)
@@ -35,7 +35,7 @@ func (m mockWorker) EnqueueUnique(jobName string, args map[string]interface{}) (
 }
 
 func TestReturnsErrorForBadPayload(t *testing.T) {
-	m := mockWorker{}
+	m := &mockWorker{}
 
 	body := bytes.NewBufferString("Not valid json")
 
@@ -48,7 +48,7 @@ func TestReturnsErrorForBadPayload(t *testing.T) {
 }
 
 func TestReturnsErrorForFailedEnqueue(t *testing.T) {
-	m := mockWorker{}
+	m := &mockWorker{}
 
 	body := web.RadarrWebhook{EventType: "Download"}
 
@@ -67,7 +67,7 @@ func TestReturnsErrorForFailedEnqueue(t *testing.T) {
 }
 
 func TestEnqueuesJobForValidInput(t *testing.T) {
-	m := mockWorker{}
+	m := &mockWorker{}
 
 	movie := web.Movie{ID: 1}
 	body := web.RadarrWebhook{EventType: "Download", Movie: movie}

@@ -1,6 +1,8 @@
 package utils
 
-import "os"
+import (
+	"os"
+)
 
 // fileExists checks if a file exists and is not a directory before we
 // try using it to prevent further errors.

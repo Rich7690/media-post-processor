@@ -101,7 +101,7 @@ func (w WorkerPoolImpl) Stop() {
 	w.pool.Stop()
 }
 
-func StartWorkerPool(wctx WorkerContext, factory WorkerPoolFactory, ctx context.Context) {
+func StartWorkerPool(ctx context.Context, wctx WorkerContext, factory WorkerPoolFactory) {
 	log.Info().Msg("Starting worker pool")
 	// Note: normally the worker context isn't shared and would be unique per job
 	// However, here we use it as a mechanism to inject dependencies into the job handler

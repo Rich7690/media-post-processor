@@ -2,8 +2,9 @@ package worker
 
 import (
 	"media-web/internal/constants"
+	"media-web/internal/transcode"
 	"media-web/internal/web"
-	"path/filepath"
+	"path"
 
 	"github.com/gocraft/work"
 	"github.com/rs/zerolog/log"
@@ -43,10 +44,16 @@ func (m movieScannerImpl) ScanForMovies() error {
 	for i := 0; i < len(movies); i++ {
 		movie := movies[i]
 		if movie.Downloaded {
-			ext := filepath.Ext(movie.MovieFile.RelativePath)
-
-			if ext != ".mp4" {
-				log.Debug().Msg("Found movie in wrong format: " + movie.MovieFile.RelativePath)
+			should, reason, err := transcode.ShouldTranscode(transcode.VideoFileImpl{
+				FilePath:        path.Join(movie.Path, movie.MovieFile.RelativePath),
+				ContainerFormat: movie.MovieFile.MediaInfo.ContainerFormat,
+				VideoCodec:      movie.MovieFile.MediaInfo.VideoFormat,
+			})
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to determine if we should transcode")
+			}
+			if should {
+				log.Debug().Str("reason", reason).Msg("Found movie in wrong format: " + movie.MovieFile.RelativePath)
 				_, err := m.scheduler.EnqueueUnique(constants.TranscodeJobType, work.Q{
 					constants.TranscodeTypeKey: constants.Movie,
 					constants.MovieIdKey:       movie.ID,

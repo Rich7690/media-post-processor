@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"media-web/internal/config"
 	"media-web/internal/constants"
-	"media-web/internal/utils"
+	"media-web/internal/transcode"
 	"os"
-	"path/filepath"
+	"path"
+
 	"strings"
 
 	"github.com/pkg/errors"
@@ -36,17 +37,17 @@ func (c *WorkerContext) TranscodeJobHandler(job *work.Job) error {
 	trans := c.GetTranscoder()
 	transcodeType := constants.TranscodeType(job.ArgString(constants.TranscodeTypeKey))
 
-	var inputFilePath string
+	var videoFile transcode.VideoFile
 	var id int64
 	var err error
-	var seriesId int
+	var seriesID int
 	switch transcodeType {
 	case constants.TV:
 		id = job.ArgInt64(constants.EpisodeFileIdKey)
-		inputFilePath, seriesId, err = c.SonarrClient.GetEpisodeFilePath(id)
+		videoFile, seriesID, err = c.SonarrClient.GetEpisodeFilePath(id)
 	case constants.Movie:
 		id = job.ArgInt64(constants.MovieIdKey)
-		inputFilePath, err = c.RadarrClient.GetMovieFilePath(id)
+		videoFile, err = c.RadarrClient.GetMovieFilePath(id)
 	default:
 		log.Warn().Msg("Unknown transcodeType: " + string(transcodeType))
 		return nil
@@ -56,39 +57,23 @@ func (c *WorkerContext) TranscodeJobHandler(job *work.Job) error {
 		log.Error().Err(err).Msg("Error getting input file path")
 		return err
 	}
-	if constants.IsLocal {
-		inputFilePath = "/Users/unknowndev/Downloads/test.mkv"
-	}
 
-	if inputFilePath != "" {
-		log.Info().Msg("Working on transcode at path: " + inputFilePath)
-	} else {
-		log.Warn().Msg("Could not get input file path")
+	should, reason, err := transcode.ShouldTranscode(videoFile)
+	if err == transcode.ErrFileNotExists || !should {
+		log.Info().Str("path", videoFile.GetFilePath()).Msg("Not transcoding file")
 		return nil
 	}
-
-	if !utils.FileExists(inputFilePath) {
-		log.Warn().Msg("Could not find file at path: " + inputFilePath)
-		return nil
-	}
-	// Initialize GetTranscoder passing the input file path and output file path
-	ext := filepath.Ext(inputFilePath)
-
-	if ext == ".mp4" {
-		log.Debug().Msg("File is already mp4 extension. Skipping...")
-		return nil
-	} else {
-		log.Debug().Msg("Current extension: " + ext)
+	if err != nil {
+		return err
 	}
 
-	fileName := filepath.Base(inputFilePath)
-	baseDir := filepath.Dir(inputFilePath)
-	newPath := baseDir + "/" + strings.Replace(fileName, ext, ".mp4", 1)
-	log.Debug().Msg("Transcoding to path: " + newPath)
+	ext := path.Ext(videoFile.GetFilePath())
+	fileName := path.Base(videoFile.GetFilePath())
+	baseDir := path.Dir(videoFile.GetFilePath())
+	newPath := path.Join(baseDir, strings.Replace(fileName, ext, ".mp4", 1))
+	log.Info().Str("reason", reason).Str("path", videoFile.GetFilePath()).Str("newPath", newPath).Msg("Transcoding file")
 
-	trans = trans.Input(inputFilePath).Output(newPath)
-
-	log.Info().Msg("Transcoding: " + inputFilePath)
+	trans = trans.Input(videoFile.GetFilePath()).Output(newPath)
 
 	preset := "veryfast"
 	format := "mp4"
@@ -108,17 +93,16 @@ func (c *WorkerContext) TranscodeJobHandler(job *work.Job) error {
 
 	// Returns a channel to get the transcoding progress
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to start transcode")
 	}
 
-	//now := time.Now()
 	start := 0
 	var prog float64 = 0
 	// Example of printing transcoding progress
 	for msg := range progress {
-		message := "Transcoding: " + inputFilePath + " -> " + fmt.Sprint(msg)
+		message := "Transcoding: " + videoFile.GetFilePath() + " -> " + fmt.Sprint(msg)
 		if int(msg.GetProgress()) >= (20 + start) {
-			log.Debug().Float64("progress", msg.GetProgress()).Msg("Transcoding: " + inputFilePath)
+			log.Debug().Float64("progress", msg.GetProgress()).Msg("Transcoding: " + videoFile.GetFilePath())
 			start = int(msg.GetProgress())
 		}
 		job.Checkin(message)
@@ -132,7 +116,7 @@ func (c *WorkerContext) TranscodeJobHandler(job *work.Job) error {
 	log.Info().Msg("Deleting old file")
 
 	if !constants.IsLocal {
-		err = os.Remove(inputFilePath)
+		err = os.Remove(videoFile.GetFilePath())
 	}
 
 	if err != nil {
@@ -142,23 +126,21 @@ func (c *WorkerContext) TranscodeJobHandler(job *work.Job) error {
 	log.Info().Msg("Done transcoding: " + newPath)
 
 	if transcodeType == constants.TV {
-		updateJob, err := c.Enqueuer.EnqueueUnique("update-sonarr", work.Q{
-			constants.SeriesIdKey: seriesId,
+		var updateJob, err = c.Enqueuer.EnqueueUnique("update-sonarr", work.Q{
+			constants.SeriesIdKey: seriesID,
 		})
 		if err != nil {
-			log.Error().Err(err).Msg("Failed to enqueue update job")
-		} else {
-			log.Debug().Msg("Created job: " + updateJob.ID)
+			return errors.Wrap(err, "Failed to enqueue update job")
 		}
+		log.Debug().Msg("Created job: " + updateJob.ID)
 	} else if transcodeType == constants.Movie {
-		updateJob, err := c.Enqueuer.EnqueueUnique("update-radarr", work.Q{
+		var updateJob, err = c.Enqueuer.EnqueueUnique("update-radarr", work.Q{
 			constants.MovieIdKey: id,
 		})
 		if err != nil {
-			log.Error().Err(err).Msg("Failed to enqueue update job")
-		} else {
-			log.Debug().Msg("Created job: " + updateJob.ID)
+			return errors.Wrap(err, "Failed to enqueue update job")
 		}
+		log.Debug().Msg("Created job: " + updateJob.ID)
 	}
-	return err
+	return nil
 }

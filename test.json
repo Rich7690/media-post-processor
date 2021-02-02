@@ -1,0 +1,109 @@
+{
+    "level": "info",
+    "mov": {
+        "title": "Star Wars: The Force Awakens",
+        "secondaryYearSourceId": 0,
+        "sortTitle": "star wars force awakens",
+        "sizeOnDisk": 5218837335,
+        "status": "released",
+        "overview": "Thirty years after defeating the Galactic Empire, Han Solo and his allies face a new threat from the evil Kylo Ren and his army of Stormtroopers.",
+        "inCinemas": "2015-12-15T00:00:00Z",
+        "physicalRelease": "2016-03-15T00:00:00Z",
+        "images": [
+            {
+                "coverType": "poster",
+                "url": "/radarr/MediaCover/40/poster.jpg?lastWrite=637297197789634976"
+            },
+            {
+                "coverType": "fanart",
+                "url": "/radarr/MediaCover/40/fanart.jpg?lastWrite=637245296019049194"
+            }
+        ],
+        "website": "http://www.starwars.com/films/star-wars-episode-vii",
+        "downloaded": true,
+        "year": 2015,
+        "hasFile": true,
+        "youTubeTrailerId": "sGbxmsDFVnE",
+        "studio": "Lucasfilm Ltd.",
+        "path": "/storage/Media/Movies/Star Wars The Force Awakens (2015)",
+        "profileId": 1,
+        "pathState": "",
+        "monitored": false,
+        "minimumAvailability": "tba",
+        "isAvailable": true,
+        "folderName": "/storage/Media/Movies/Star Wars The Force Awakens (2015)",
+        "runtime": 136,
+        "lastInfoSync": "2021-01-30T21:02:23.4270484Z",
+        "cleanTitle": "starwarsforceawakens",
+        "imdbId": "tt2488496",
+        "tmdbId": 140607,
+        "titleSlug": "140607",
+        "genres": [
+            "Action",
+            "Adventure",
+            "Science Fiction"
+        ],
+        "tags": [],
+        "added": "2017-08-13T04:51:31.726143Z",
+        "ratings": {
+            "votes": 15421,
+            "value": 7.4
+        },
+        "movieFile": {
+            "movieId": 0,
+            "relativePath": "Star Wars The Force Awakens.mp4",
+            "size": 5218837335,
+            "dateAdded": "2017-08-23T00:29:35.309269Z",
+            "sceneName": "",
+            "releaseGroup": "",
+            "quality": {
+                "quality": {
+                    "id": 7,
+                    "name": "Bluray-1080p",
+                    "source": "bluray",
+                    "modifier": "none"
+                },
+                "revision": {
+                    "version": 1,
+                    "real": 0
+                }
+            },
+            "edition": "",
+            "mediaInfo": {
+                "containerFormat": "MPEG-4",
+                "videoFormat": "AVC",
+                "videoCodecID": "avc1",
+                "videoProfile": "High@L4",
+                "videoCodecLibrary": "x264 - core 148 r2665 a01e339",
+                "videoBitrate": 4121473,
+                "videoBitDepth": 8,
+                "videoMultiViewCount": 0,
+                "videoColourPrimaries": "",
+                "videoTransferCharacteristics": "",
+                "width": 1920,
+                "height": 800,
+                "audioFormat": "AAC",
+                "audioCodecID": "mp4a-40-2",
+                "audioCodecLibrary": "",
+                "audioAdditionalFeatures": "LC",
+                "audioBitrate": 264600,
+                "runTime": "02:18:06.7370000",
+                "audioStreamCount": 2,
+                "audioChannels": 0,
+                "audioChannelPositions": "2/0/0",
+                "audioChannelPositionsText": "",
+                "audioProfile": "",
+                "videoFps": 23.976,
+                "audioLanguages": "English / English",
+                "subtitles": "",
+                "scanType": "Progressive",
+                "schemaRevision": 5
+            },
+            "id": 148
+        },
+        "qualityProfileId": 1,
+        "id": 40
+    },
+    "time": 1612056935431,
+    "message": "movie"
+}
