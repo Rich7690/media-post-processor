@@ -11,7 +11,7 @@ import (
 )
 
 func (c *WorkerContext) UpdateMovie(job *work.Job) error {
-	movieID := job.ArgInt64(constants.MovieIdKey)
+	movieID := job.ArgInt64(constants.MovieIDKey)
 
 	cmd, err := c.RadarrClient.RescanMovie(movieID)
 

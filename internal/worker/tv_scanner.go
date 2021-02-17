@@ -30,7 +30,7 @@ func ScanForTVShows(sonarrClient web.SonarrClient, scheduler WorkScheduler) {
 				log.Info().Msg("Found episode file in wrong format: " + file.Path)
 				_, err := scheduler.EnqueueUnique(constants.TranscodeJobType, work.Q{
 					constants.TranscodeTypeKey: constants.TV,
-					constants.EpisodeFileIdKey: file.ID,
+					constants.EpisodeFileIDKey: file.ID,
 				})
 				if err != nil {
 					log.Error().Err(err).Msg("Error enqueueing tv transcode")

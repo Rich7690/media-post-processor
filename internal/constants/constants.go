@@ -4,12 +4,12 @@ import "os"
 
 var IsLocal = os.Getenv("LOCAL") == "true"
 
-const SeriesIdKey = "seriesId"
-const MovieIdKey = "movieId"
+const SeriesIDKey = "seriesId"
+const MovieIDKey = "movieId"
 const TranscodeJobType = "transcode-job"
 const UpdateRadarrJobName = "update-radarr"
 const UpdateSonarrJobName = "update-sonarr"
-const EpisodeFileIdKey = "episodeFileId"
+const EpisodeFileIDKey = "episodeFileId"
 const TranscodeTypeKey = "transcodeType"
 
 type TranscodeType string

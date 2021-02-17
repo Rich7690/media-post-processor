@@ -1,7 +1,6 @@
 package web
 
 import (
-	"media-web/internal/constants"
 	"time"
 )
 
@@ -105,11 +104,6 @@ type RadarrCommand struct {
 	SendUpdatesToClient bool      `json:"sendUpdatesToClient"`
 	UpdateScheduledTask bool      `json:"updateScheduledTask"`
 	ID                  int       `json:"id"`
-}
-
-type JobData struct {
-	TranscodeType constants.TranscodeType `json:"transcodeType"`
-	Id            int                     `json:"id"`
 }
 
 type Movie struct {

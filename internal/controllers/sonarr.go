@@ -22,11 +22,10 @@ func GetSonarrWebhookHandler(scheduler worker.WorkScheduler) func(w http.Respons
 			return
 		}
 
-		switch body.EventType {
-		case "Download":
+		if body.EventType == "Download" {
 			log.Info().Msg("Got Download request")
 			job, err := scheduler.EnqueueUnique(constants.TranscodeJobType, work.Q{
-				constants.EpisodeFileIdKey: body.EpisodeFile.ID,
+				constants.EpisodeFileIDKey: body.EpisodeFile.ID,
 				constants.TranscodeTypeKey: constants.TV,
 			})
 

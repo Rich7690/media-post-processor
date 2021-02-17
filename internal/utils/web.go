@@ -102,6 +102,7 @@ func makePostRequest(base *url.URL, path string, values url.Values, body interfa
 	}
 	baseURL.RawQuery = currentValues.Encode()
 	log.Trace().Str("url", baseURL.String()).Msg("Making POST request")
+	//nolint:noctx
 	resp, err := netClient.Post(baseURL.String(), "application/json", buf)
 
 	if err != nil {
@@ -127,6 +128,7 @@ func makeGetRequest(baseURL *url.URL, path string, values url.Values) (*http.Res
 	}
 	base.RawQuery = currentValues.Encode()
 	log.Trace().Str("url", base.String()).Msg("Making GET request")
+	//nolint:noctx
 	resp, err := netClient.Get(base.String())
 
 	if err != nil {

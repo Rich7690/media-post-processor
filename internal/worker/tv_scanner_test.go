@@ -45,7 +45,7 @@ func TestSkipIfUnmatchedExtension(t *testing.T) {
 	w := mockWorker{}
 	w.On("EnqueueUnique", constants.TranscodeJobType, map[string]interface{}{
 		constants.TranscodeTypeKey: constants.TV,
-		constants.EpisodeFileIdKey: 2,
+		constants.EpisodeFileIDKey: 2,
 	}).Once().Return(nil, nil)
 	ScanForTVShows(mockClient, &w)
 	assert.Equal(t, 1, inputSeries)

@@ -18,9 +18,9 @@ type VideoFile interface {
 }
 
 type VideoFileImpl struct {
-	FilePath        string
-	ContainerFormat string
-	VideoCodec      string
+	FilePath        string `json:"filePath,omitempty"`
+	ContainerFormat string `json:"containerFormat,omitempty"`
+	VideoCodec      string `json:"videoCodec,omitempty"`
 }
 
 func (v VideoFileImpl) GetFilePath() string {
@@ -35,7 +35,7 @@ func (v VideoFileImpl) GetVideoCodec() string {
 	return v.VideoCodec
 }
 
-func ShouldTranscode(input VideoFile) (bool, string, error) {
+func ShouldTranscode(input VideoFile) (should bool, reason string, err error) {
 	if !utils.FileExists(input.GetFilePath()) {
 		return false, "", ErrFileNotExists
 	}

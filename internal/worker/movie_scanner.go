@@ -56,7 +56,7 @@ func (m movieScannerImpl) ScanForMovies() error {
 				log.Debug().Str("reason", reason).Msg("Found movie in wrong format: " + movie.MovieFile.RelativePath)
 				_, err := m.scheduler.EnqueueUnique(constants.TranscodeJobType, work.Q{
 					constants.TranscodeTypeKey: constants.Movie,
-					constants.MovieIdKey:       movie.ID,
+					constants.MovieIDKey:       movie.ID,
 				})
 				if err != nil {
 					log.Error().Err(err).Msg("Failed to enqueue movie transcode")

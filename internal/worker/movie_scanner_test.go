@@ -102,7 +102,7 @@ func TestEnqueueIfProperFormat(t *testing.T) {
 		return movieList, nil
 	}
 	w := mockWorker{}
-	w.On("EnqueueUnique", constants.TranscodeJobType, map[string]interface{}{constants.MovieIdKey: 0,
+	w.On("EnqueueUnique", constants.TranscodeJobType, map[string]interface{}{constants.MovieIDKey: 0,
 		constants.TranscodeTypeKey: constants.Movie}).Once().Return(nil, nil)
 	scanner := NewMovieScanner(mockClient, &w)
 	err := scanner.ScanForMovies()

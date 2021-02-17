@@ -43,10 +43,10 @@ func (c *WorkerContext) TranscodeJobHandler(job *work.Job) error {
 	var seriesID int
 	switch transcodeType {
 	case constants.TV:
-		id = job.ArgInt64(constants.EpisodeFileIdKey)
+		id = job.ArgInt64(constants.EpisodeFileIDKey)
 		videoFile, seriesID, err = c.SonarrClient.GetEpisodeFilePath(id)
 	case constants.Movie:
-		id = job.ArgInt64(constants.MovieIdKey)
+		id = job.ArgInt64(constants.MovieIDKey)
 		videoFile, err = c.RadarrClient.GetMovieFilePath(id)
 	default:
 		log.Warn().Msg("Unknown transcodeType: " + string(transcodeType))
@@ -127,7 +127,7 @@ func (c *WorkerContext) TranscodeJobHandler(job *work.Job) error {
 
 	if transcodeType == constants.TV {
 		var updateJob, err = c.Enqueuer.EnqueueUnique("update-sonarr", work.Q{
-			constants.SeriesIdKey: seriesID,
+			constants.SeriesIDKey: seriesID,
 		})
 		if err != nil {
 			return errors.Wrap(err, "Failed to enqueue update job")
@@ -135,7 +135,7 @@ func (c *WorkerContext) TranscodeJobHandler(job *work.Job) error {
 		log.Debug().Msg("Created job: " + updateJob.ID)
 	} else if transcodeType == constants.Movie {
 		var updateJob, err = c.Enqueuer.EnqueueUnique("update-radarr", work.Q{
-			constants.MovieIdKey: id,
+			constants.MovieIDKey: id,
 		})
 		if err != nil {
 			return errors.Wrap(err, "Failed to enqueue update job")

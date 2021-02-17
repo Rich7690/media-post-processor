@@ -20,7 +20,7 @@ func TestRadarrRescanSeriesErrorReturns(t *testing.T) {
 		RadarrClient: mockClient,
 	}
 
-	err := context.UpdateMovie(&work.Job{Args: map[string]interface{}{constants.SeriesIdKey: 1}})
+	err := context.UpdateMovie(&work.Job{Args: map[string]interface{}{constants.SeriesIDKey: 1}})
 
 	assert.Error(t, err)
 }
@@ -42,7 +42,7 @@ func TestRadarrRescanNoErrorOnNonCompleteAfterAllTries(t *testing.T) {
 		Sleep:        func(d time.Duration) {},
 	}
 
-	err := context.UpdateMovie(&work.Job{Args: map[string]interface{}{constants.MovieIdKey: 1}})
+	err := context.UpdateMovie(&work.Job{Args: map[string]interface{}{constants.MovieIDKey: 1}})
 
 	assert.True(t, callCheck)
 	assert.True(t, callRescan)
@@ -66,7 +66,7 @@ func TestRadarrRescanNoErrorOnComplete(t *testing.T) {
 		Sleep:        func(d time.Duration) {},
 	}
 
-	err := context.UpdateMovie(&work.Job{Args: map[string]interface{}{constants.MovieIdKey: 1}})
+	err := context.UpdateMovie(&work.Job{Args: map[string]interface{}{constants.MovieIDKey: 1}})
 
 	assert.True(t, callCheck)
 	assert.True(t, callRescan)
@@ -90,7 +90,7 @@ func TestRadarrRescanNoErrorCheckCommand(t *testing.T) {
 		Sleep:        func(d time.Duration) {},
 	}
 
-	err := context.UpdateMovie(&work.Job{Args: map[string]interface{}{constants.MovieIdKey: 1}})
+	err := context.UpdateMovie(&work.Job{Args: map[string]interface{}{constants.MovieIDKey: 1}})
 
 	assert.True(t, callCheck)
 	assert.True(t, callRescan)

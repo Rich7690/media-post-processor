@@ -20,7 +20,7 @@ func TestRescanSeriesErrorReturns(t *testing.T) {
 		SonarrClient: mockClient,
 	}
 
-	err := context.UpdateTVShow(&work.Job{Args: map[string]interface{}{constants.SeriesIdKey: 1}})
+	err := context.UpdateTVShow(&work.Job{Args: map[string]interface{}{constants.SeriesIDKey: 1}})
 
 	assert.Error(t, err)
 }
@@ -42,7 +42,7 @@ func TestRescanNoErrorOnNonCompleteAfterAllTries(t *testing.T) {
 		Sleep:        func(d time.Duration) {},
 	}
 
-	err := context.UpdateTVShow(&work.Job{Args: map[string]interface{}{constants.SeriesIdKey: 1}})
+	err := context.UpdateTVShow(&work.Job{Args: map[string]interface{}{constants.SeriesIDKey: 1}})
 
 	assert.True(t, callCheck)
 	assert.True(t, callRescan)
@@ -66,7 +66,7 @@ func TestRescanNoErrorOnComplete(t *testing.T) {
 		Sleep:        func(d time.Duration) {},
 	}
 
-	err := context.UpdateTVShow(&work.Job{Args: map[string]interface{}{constants.SeriesIdKey: 1}})
+	err := context.UpdateTVShow(&work.Job{Args: map[string]interface{}{constants.SeriesIDKey: 1}})
 
 	assert.True(t, callCheck)
 	assert.True(t, callRescan)
@@ -90,7 +90,7 @@ func TestRescanNoErrorCheckCommand(t *testing.T) {
 		Sleep:        func(d time.Duration) {},
 	}
 
-	err := context.UpdateTVShow(&work.Job{Args: map[string]interface{}{constants.SeriesIdKey: 1}})
+	err := context.UpdateTVShow(&work.Job{Args: map[string]interface{}{constants.SeriesIDKey: 1}})
 
 	assert.True(t, callCheck)
 	assert.True(t, callRescan)
