@@ -3,8 +3,6 @@ package storage
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"media-web/internal/config"
 	"media-web/internal/constants"
 	"media-web/internal/transcode"
 	"time"
@@ -59,61 +57,11 @@ type TranscodeWorkerImpl struct {
 	lock   *redislock.Client
 }
 
-type TranscodeFileWorkerImpl struct {
-	driver *Driver
-}
-
-func (t TranscodeFileWorkerImpl) EnqueueJob(ctx context.Context, job *TranscodeJob) error {
-	job.ID = cuid.New()
-	job.Status = Created
-	job.StatusTime = time.Now()
-	return t.driver.Write("jobs", job.ID, job)
-}
-
-func (t TranscodeFileWorkerImpl) DequeueJob(ctx context.Context, work func(ctx context.Context, job TranscodeJob) error) error {
-	job := TranscodeJob{}
-
-	err := t.driver.GetRandom("jobs", &job)
-	if err != nil {
-		return err
-	}
-	if job.ID == "" {
-		select {
-		case <-time.After(5 * time.Second):
-		case <-ctx.Done():
-			return nil
-		}
-		return nil
-	}
-	job.Attempt++
-	job.Status = InProgress
-	job.StatusTime = time.Now()
-	err = t.driver.Write("jobs", job.ID, job)
-	if err != nil {
-		return errors.Wrap(err, "Failed to save job")
-	}
-
-	err = work(ctx, job)
-	if err != nil {
-		return err
-	}
-
-	return t.driver.Delete("jobs", job.ID)
-}
-
-func (t TranscodeFileWorkerImpl) HandleErrored(ctx context.Context) error {
-	return nil
-}
-
 func GetTranscodeWorker() TranscodeWorker {
-	workPath := config.GetConfig().WorkDirectory
-
-	client, err := New(workPath, nil)
-	if err != nil {
-		panic(err)
+	return TranscodeWorkerImpl{
+		client: RedisClient(),
+		lock:   LockClient(),
 	}
-
-	return TranscodeFileWorkerImpl{client}
 }
 
 func (t TranscodeWorkerImpl) HandleErrored(ctx context.Context) error {
@@ -188,19 +136,13 @@ func (t TranscodeWorkerImpl) HandleErrored(ctx context.Context) error {
 }
 
 func (t TranscodeWorkerImpl) EnqueueJob(ctx context.Context, job *TranscodeJob) error {
-	id, err := t.client.Incr(ctx, "transcode-job-id-count").Result()
-	if err != nil {
-		return errors.Wrap(err, "Failed to generate new id")
-	}
-	job.ID = fmt.Sprintf("%d", id)
+	id := cuid.New()
+	job.ID = id
 	job.Status = Created
 	job.StatusTime = time.Now()
 	tx := t.client.TxPipeline()
 
-	if err != nil {
-		return err
-	}
-	err = tx.Set(ctx, "transcode-job:"+job.ID, job, 0).Err()
+	err := tx.Set(ctx, "transcode-job:"+job.ID, job, 0).Err()
 	if err != nil {
 		return err
 	}

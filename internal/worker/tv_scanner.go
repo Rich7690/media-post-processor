@@ -33,9 +33,9 @@ func ScanForTVShows(ctx context.Context, sonarrClient web.SonarrClient, wk stora
 				err := wk.EnqueueJob(ctx, &storage.TranscodeJob{
 					TranscodeType: constants.TV,
 					VideoFileImpl: transcode.VideoFileImpl{
-						FilePath: file.Path,
+						FilePath:        file.Path,
 						ContainerFormat: ext,
-						VideoCodec: file.MediaInfo.VideoCodec,
+						VideoCodec:      file.MediaInfo.VideoCodec,
 					},
 					VideoID: int64(file.SeriesID),
 				})

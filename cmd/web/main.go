@@ -45,6 +45,17 @@ func startWorker(ctx context.Context) {
 		}
 	}()
 
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(1 * time.Minute):
+				wk.HandleErrored(ctx)
+			}
+		}
+	}()
+
 	worker.StartWorkerPool(ctx, worker.GetWorkerContext(), worker.WorkerPoolFactoryImpl{})
 }
 

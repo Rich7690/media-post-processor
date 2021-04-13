@@ -1,12 +1,12 @@
 package worker
 
 import (
+	"context"
 	"errors"
-	"media-web/internal/constants"
+	"media-web/internal/storage"
 	"media-web/internal/web"
 	"testing"
 
-	"github.com/gocraft/work"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -15,18 +15,14 @@ type mockWorker struct {
 	mock.Mock
 }
 
-func (m *mockWorker) EnqueueUnique(jobName string, args map[string]interface{}) (*work.Job, error) {
-	resp := m.Called(jobName, args)
-
-	arg := resp.Get(0)
-
-	job, ok := arg.(*work.Job)
-
-	if ok {
-		return job, resp.Error(1)
-	}
-
-	return nil, resp.Error(1)
+func (m *mockWorker) EnqueueJob(ctx context.Context, job *storage.TranscodeJob) error {
+	return m.Called(ctx, job).Error(0)
+}
+func (m *mockWorker) DequeueJob(ctx context.Context, work func(ctx context.Context, job storage.TranscodeJob) error) error {
+	return m.Called(ctx, work).Error(0)
+}
+func (m *mockWorker) HandleErrored(ctx context.Context) error {
+	return m.Called(ctx).Error(0)
 }
 
 func TestErrorFromScanner(t *testing.T) {
@@ -36,12 +32,12 @@ func TestErrorFromScanner(t *testing.T) {
 		return nil, mockErr
 	}
 	w := mockWorker{}
-	w.On("EnqueueUnique").Times(0).Return(nil, nil)
+	w.On("EnqueueJob").Times(0).Return(nil, nil)
 	scanner := NewMovieScanner(mockClient, &w)
-	err := scanner.ScanForMovies()
+	err := scanner.ScanForMovies(context.Background())
 
 	assert.Error(t, err)
-	w.AssertNotCalled(t, "EnqueueUnique")
+	w.AssertNotCalled(t, "EnqueueJob")
 }
 
 func TestDoesNothingIfNoMovies(t *testing.T) {
@@ -50,14 +46,14 @@ func TestDoesNothingIfNoMovies(t *testing.T) {
 		return make([]web.RadarrMovie, 1), nil
 	}
 	w := mockWorker{}
-	w.On("EnqueueUnique").Times(0).Return(nil, nil)
+	w.On("EnqueueJob").Times(0).Return(nil, nil)
 	scanner := NewMovieScanner(mockClient, &w)
-	err := scanner.ScanForMovies()
+	err := scanner.ScanForMovies(context.Background())
 
 	if err != nil {
 		t.Error("Error returned")
 	}
-	w.AssertNotCalled(t, "EnqueueUnique")
+	w.AssertNotCalled(t, "EnqueueJob")
 }
 
 func TestDoesNothingIfNotDownloaded(t *testing.T) {
@@ -68,14 +64,14 @@ func TestDoesNothingIfNotDownloaded(t *testing.T) {
 		return movieList, nil
 	}
 	w := mockWorker{}
-	w.On("EnqueueUnique").Times(0).Return(nil, nil)
+	w.On("EnqueueJob").Times(0).Return(nil, nil)
 	scanner := NewMovieScanner(mockClient, &w)
-	err := scanner.ScanForMovies()
+	err := scanner.ScanForMovies(context.Background())
 
 	if err != nil {
 		t.Error("Error returned")
 	}
-	w.AssertNotCalled(t, "EnqueueUnique")
+	w.AssertNotCalled(t, "EnqueueJob")
 }
 
 func TestSkipsIfAlreadyRightFormat(t *testing.T) {
@@ -85,14 +81,14 @@ func TestSkipsIfAlreadyRightFormat(t *testing.T) {
 		return movieList, nil
 	}
 	w := mockWorker{}
-	w.On("EnqueueUnique").Times(0).Return(nil, nil)
+	w.On("EnqueueJob").Times(0).Return(nil, nil)
 	scanner := NewMovieScanner(mockClient, &w)
-	err := scanner.ScanForMovies()
+	err := scanner.ScanForMovies(context.Background())
 
 	if err != nil {
 		t.Error("Error returned")
 	}
-	w.AssertNotCalled(t, "EnqueueUnique")
+	w.AssertNotCalled(t, "EnqueueJob")
 }
 
 func TestEnqueueIfProperFormat(t *testing.T) {
@@ -102,10 +98,9 @@ func TestEnqueueIfProperFormat(t *testing.T) {
 		return movieList, nil
 	}
 	w := mockWorker{}
-	w.On("EnqueueUnique", constants.TranscodeJobType, map[string]interface{}{constants.MovieIDKey: 0,
-		constants.TranscodeTypeKey: constants.Movie}).Once().Return(nil, nil)
+	w.On("EnqueueJob", mock.Anything, mock.Anything).Once().Return(nil, nil)
 	scanner := NewMovieScanner(mockClient, &w)
-	err := scanner.ScanForMovies()
+	err := scanner.ScanForMovies(context.Background())
 
 	if err != nil {
 		t.Error("Error returned")
@@ -120,9 +115,9 @@ func TestEnqueueAndIgnoresEnqueueError(t *testing.T) {
 		return movieList, nil
 	}
 	w := mockWorker{}
-	w.On("EnqueueUnique", mock.Anything, mock.Anything).Once().Return(nil, errors.New("boom"))
+	w.On("EnqueueJob", mock.Anything, mock.Anything).Once().Return(nil, errors.New("boom"))
 	scanner := NewMovieScanner(mockClient, &w)
-	err := scanner.ScanForMovies()
+	err := scanner.ScanForMovies(context.Background())
 
 	if err != nil {
 		t.Error("Error returned")

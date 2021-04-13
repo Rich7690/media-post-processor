@@ -148,7 +148,6 @@ func (c *WorkerContext) enqueueUpdate(ctx context.Context, job storage.Transcode
 		if updateJob != nil {
 			log.Debug().Msg("Created job: " + updateJob.ID)
 		}
-
 	} else if job.TranscodeType == constants.Movie {
 		var updateJob, err = c.Enqueuer.EnqueueUnique("update-radarr", work.Q{
 			constants.MovieIDKey: job.VideoID,

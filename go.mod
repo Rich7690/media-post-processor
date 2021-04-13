@@ -6,6 +6,7 @@ require (
 	github.com/bsm/redislock v0.7.0
 	github.com/caarlos0/env/v6 v6.5.0
 	github.com/floostack/transcoder v1.1.1
+	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/go-redis/redis/v8 v8.8.0
 	github.com/gocraft/work v0.5.2-0.20180912175354-c85b71e20062
 	github.com/gomodule/redigo v2.0.0+incompatible

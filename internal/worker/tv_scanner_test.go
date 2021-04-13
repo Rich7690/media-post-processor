@@ -1,12 +1,13 @@
 package worker
 
 import (
+	"context"
 	"errors"
-	"media-web/internal/constants"
 	"media-web/internal/web"
 	"testing"
 
-	"gopkg.in/go-playground/assert.v1"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestErrorFromTVScanner(t *testing.T) {
@@ -17,7 +18,7 @@ func TestErrorFromTVScanner(t *testing.T) {
 	}
 	// We'd fail with pointer errors if we called anything on here
 	w := mockWorker{}
-	ScanForTVShows(mockClient, &w)
+	ScanForTVShows(context.Background(), mockClient, &w)
 	w.AssertExpectations(t)
 }
 
@@ -43,11 +44,8 @@ func TestSkipIfUnmatchedExtension(t *testing.T) {
 		},
 	}
 	w := mockWorker{}
-	w.On("EnqueueUnique", constants.TranscodeJobType, map[string]interface{}{
-		constants.TranscodeTypeKey: constants.TV,
-		constants.EpisodeFileIDKey: 2,
-	}).Once().Return(nil, nil)
-	ScanForTVShows(mockClient, &w)
+	w.On("EnqueueJob", mock.Anything, mock.Anything).Once().Return(nil)
+	ScanForTVShows(context.Background(), mockClient, &w)
 	assert.Equal(t, 1, inputSeries)
 	w.AssertExpectations(t)
 }

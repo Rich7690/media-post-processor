@@ -16,9 +16,9 @@ type Config struct {
 	EnablePrettyLog     bool     `env:"ENABLE_PRETTYLOG" envDefault:"false"`
 	RadarrApiKey        string   `env:"RADARR_API_KEY"`
 	SonarrApiKey        string   `env:"SONARR_API_KEY"`
-	RadarrBaseEndpoint  *url.URL `env:"RADARR_BASE_ENDPOINT"`
-	SonarrBaseEndpoint  *url.URL `env:"SONARR_BASE_ENDPOINT"`
-	RedisAddress        *url.URL `env:"REDIS_ADDRESS"`
+	RadarrBaseEndpoint  *url.URL `env:"RADARR_BASE_ENDPOINT" envDefault:"http://localhost:7878"`
+	SonarrBaseEndpoint  *url.URL `env:"SONARR_BASE_ENDPOINT" envDefault:"http://localhost:8989"`
+	RedisAddress        *url.URL `env:"REDIS_ADDRESS" envDefault:"redis://localhost:6379"`
 	JobQueueNamespace   string   `env:"JOB_QUEUE_NAMESPACE" envDefault:"media-web"`
 	FfmpegPath          string   `env:"FFMPEG_PATH" envDefault:"/usr/bin/ffmpeg"`
 	FfprobePath         string   `env:"FFPROBE_PATH" envDefault:"/usr/bin/ffprobe"`

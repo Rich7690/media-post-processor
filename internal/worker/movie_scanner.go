@@ -18,8 +18,8 @@ type MovieScanner interface {
 }
 
 type movieScannerImpl struct {
-	client    web.RadarrClient
-	tWorker   storage.TranscodeWorker
+	client  web.RadarrClient
+	tWorker storage.TranscodeWorker
 }
 
 // NewMovieScanner creates a new instance of MovieScanner

@@ -64,11 +64,11 @@ func TestWorkerPoolSetup(t *testing.T) {
 		return nil
 	})
 
-	StartWorkerPool(ctx, context, MockWorkerPoolFactory{makePool: makePool})
+	StartWorkerPool(ctx, &context, MockWorkerPoolFactory{makePool: makePool})
 
 	assert.NoError(t, err)
 	assert.True(t, start)
 	assert.True(t, stop)
 	assert.True(t, middleware)
-	assert.ElementsMatch(t, jobs, []string{constants.TranscodeJobType, constants.UpdateSonarrJobName, constants.UpdateRadarrJobName})
+	assert.ElementsMatch(t, jobs, []string{constants.UpdateSonarrJobName, constants.UpdateRadarrJobName})
 }

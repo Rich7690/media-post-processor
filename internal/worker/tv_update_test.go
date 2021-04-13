@@ -73,7 +73,7 @@ func TestRescanNoErrorOnComplete(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestRescanNoErrorCheckCommand(t *testing.T) {
+func TestRescanErrorCheckCommand(t *testing.T) {
 	mockClient := MockSonarr{}
 	callRescan := false
 	mockClient.rescanSeries = func(id *int64) (*web.SonarrCommand, error) {
@@ -94,5 +94,5 @@ func TestRescanNoErrorCheckCommand(t *testing.T) {
 
 	assert.True(t, callCheck)
 	assert.True(t, callRescan)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 }
