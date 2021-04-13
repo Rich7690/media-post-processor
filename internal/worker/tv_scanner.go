@@ -1,15 +1,17 @@
 package worker
 
 import (
+	"context"
 	"media-web/internal/constants"
+	"media-web/internal/storage"
+	"media-web/internal/transcode"
 	"media-web/internal/web"
 	"path/filepath"
 
-	"github.com/gocraft/work"
 	"github.com/rs/zerolog/log"
 )
 
-func ScanForTVShows(sonarrClient web.SonarrClient, scheduler WorkScheduler) {
+func ScanForTVShows(ctx context.Context, sonarrClient web.SonarrClient, wk storage.TranscodeWorker) {
 	series, err := sonarrClient.GetAllSeries()
 
 	if err != nil {
@@ -28,9 +30,14 @@ func ScanForTVShows(sonarrClient web.SonarrClient, scheduler WorkScheduler) {
 
 			if ext != ".mp4" {
 				log.Info().Msg("Found episode file in wrong format: " + file.Path)
-				_, err := scheduler.EnqueueUnique(constants.TranscodeJobType, work.Q{
-					constants.TranscodeTypeKey: constants.TV,
-					constants.EpisodeFileIDKey: file.ID,
+				err := wk.EnqueueJob(ctx, &storage.TranscodeJob{
+					TranscodeType: constants.TV,
+					VideoFileImpl: transcode.VideoFileImpl{
+						FilePath: file.Path,
+						ContainerFormat: ext,
+						VideoCodec: file.MediaInfo.VideoCodec,
+					},
+					VideoID: int64(file.SeriesID),
 				})
 				if err != nil {
 					log.Error().Err(err).Msg("Error enqueueing tv transcode")

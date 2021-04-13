@@ -43,7 +43,7 @@ func ShouldTranscode(input VideoFile) (should bool, reason string, err error) {
 	if path.Ext(input.GetFilePath()) != ".mp4" {
 		return true, "file does not have .mp4 extension", nil
 	}
-
+/*
 	if input.GetContainerFormat() != "" && input.GetContainerFormat() != "MPEG-4" {
 		return true, "file not in mp4 format", nil
 	}
@@ -57,6 +57,6 @@ func ShouldTranscode(input VideoFile) (should bool, reason string, err error) {
 	default:
 		return true, "file has codec " + input.GetVideoCodec(), nil
 	}
-
+*/
 	return false, "", nil
 }

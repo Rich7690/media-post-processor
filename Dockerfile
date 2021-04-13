@@ -5,10 +5,10 @@ FROM golang:1.15-alpine3.12 AS builder
 # We create an /app directory in which
 # we'll put all of our project code
 RUN mkdir /app
-ADD . /app
 WORKDIR /app
 RUN apk update
 RUN apk add gcc libstdc++ libc-dev
+COPY . /app
 # We want to build our application's binary executable
 RUN go build -o main -a ./cmd/web/main.go
 RUN go build -o test -a ./cmd/test/main.go

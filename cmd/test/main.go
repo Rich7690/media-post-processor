@@ -3,10 +3,12 @@ package main
 import (
 	"context"
 	"media-web/internal/config"
-	"media-web/internal/constants"
 	"media-web/internal/storage"
-	"media-web/internal/transcode"
 	"media-web/internal/utils"
+	"media-web/internal/web"
+
+	//"media-web/internal/web"
+	"media-web/internal/worker"
 	"os"
 	"os/signal"
 	"syscall"
@@ -17,7 +19,7 @@ import (
 )
 
 func main() {
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
+	zerolog.TimeFieldFormat = time.StampMilli
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 
 	if config.GetConfig().EnablePrettyLog {
@@ -30,41 +32,20 @@ func main() {
 
 	log.Info().Msg("Running")
 
-	wk := storage.GetTranscodeWorker(nil)
+	wk := storage.GetTranscodeWorker()
 
-	go func() {
-		for {
+	//t := worker.GetWorkerContext()
 
-			err := wk.HandleErrored(ctx)
-			if ctx.Err() != nil {
-				return
-			}
-			if err != nil {
-				log.Err(err).Msg("Error scanning in progress jobs")
-			}
-			time.Sleep(1 * time.Minute)
-		}
-	}()
+	worker.NewMovieScanner(web.GetRadarrClient(), wk).ScanForMovies(ctx)
 
-	err := wk.EnqueueJob(ctx, &storage.TranscodeJob{
-		TranscodeType: constants.Movie,
-		VideoFileImpl: transcode.VideoFileImpl{
-			FilePath:        "testpath",
-			ContainerFormat: "contformat",
-			VideoCodec:      "codec",
-		},
-	})
-
-	if err != nil {
-		log.Fatal().Err(err).Msg("failed to enqueuue")
-	}
+	//if err != nil {
+	//		log.Fatal().Err(err).Msg("Failed to scan")
+	//	}
 
 	for {
-		err = wk.DequeueJob(ctx, func(ctx context.Context, job storage.TranscodeJob) error {
-			log.Debug().Interface("job", job).Msg("Got job")
-
+		err := wk.DequeueJob(ctx, func(ctx context.Context, job storage.TranscodeJob) error {
+			log.Debug().Msg("Dequeued job")
 			return nil
-
 		})
 
 		if err != nil {

@@ -24,6 +24,7 @@ type Config struct {
 	FfprobePath         string   `env:"FFPROBE_PATH" envDefault:"/usr/bin/ffprobe"`
 	MovieScanCron       string   `env:"MOVIE_SCAN_CRON" envDefault:"0 0 * * *"`
 	TVScanCron          string   `env:"TV_SCAN_CRON" envDefault:"0 1 * * *"`
+	WorkDirectory       string   `env:"WORK_DIRECTORY" envDefault:"/tmp/config"`
 }
 
 var config = ValidateConfig()

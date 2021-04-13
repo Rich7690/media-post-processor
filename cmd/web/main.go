@@ -4,6 +4,7 @@ import (
 	"context"
 	"media-web/internal/config"
 	"media-web/internal/controllers"
+	"media-web/internal/storage"
 	"media-web/internal/utils"
 	"media-web/internal/web"
 	"media-web/internal/worker"
@@ -24,23 +25,43 @@ import (
 
 func startWorker(ctx context.Context) {
 	log.Info().Msg("Starting worker.")
+
+	wk := storage.GetTranscodeWorker()
+
+	t := worker.GetWorkerContext()
+
+	go func() {
+		log.Info().Msg("Watching for jobs")
+		for {
+			err := wk.DequeueJob(ctx, t.HandleTranscodeJob)
+
+			if err != nil {
+				log.Err(err).Msg("failed to dequeue")
+				time.Sleep(5 * time.Second)
+			}
+			if ctx.Err() != nil {
+				return
+			}
+		}
+	}()
+
 	worker.StartWorkerPool(ctx, worker.GetWorkerContext(), worker.WorkerPoolFactoryImpl{})
 }
 
-func performTVScan() {
+func performTVScan(ctx context.Context) {
 	log.Info().Msg("Scanning for TV in wrong format")
-	worker.ScanForTVShows(web.GetSonarrClient(), worker.Enqueuer)
+	worker.ScanForTVShows(ctx, web.GetSonarrClient(), storage.GetTranscodeWorker())
 	log.Info().Msg("Done scanning for TV shows")
 }
 
-func performScan(scanner worker.MovieScanner) {
+func performScan(ctx context.Context, scanner worker.MovieScanner) {
 	log.Info().Msg("Scanning for missing movies")
 	err := scanner.SearchForMissingMovies()
 	if err != nil {
 		log.Err(err).Msg("Error searching for movies")
 	}
 	log.Info().Msg("Scanning for movies in wrong format")
-	err = scanner.ScanForMovies()
+	err = scanner.ScanForMovies(ctx)
 	log.Info().Msg("Done scanning for movies")
 	if err != nil {
 		log.Err(err).Msg("Error scanning for movies")
@@ -50,11 +71,12 @@ func performScan(scanner worker.MovieScanner) {
 func startScanners(ctx context.Context) {
 	c := cron.New()
 
+	tWorker := storage.GetTranscodeWorker()
 	if config.GetConfig().EnableRadarrScanner {
-		scanner := worker.NewMovieScanner(web.GetRadarrClient(), worker.Enqueuer)
+		scanner := worker.NewMovieScanner(web.GetRadarrClient(), tWorker)
 
 		_, err := c.AddFunc(config.GetConfig().MovieScanCron, func() {
-			performScan(scanner)
+			performScan(ctx, scanner)
 		})
 		if err != nil {
 			log.Fatal().Err(err).Msg("Failed to start Radarr scanner")
@@ -63,7 +85,7 @@ func startScanners(ctx context.Context) {
 
 	if config.GetConfig().EnableSonarrScanner {
 		_, err := c.AddFunc(config.GetConfig().TVScanCron, func() {
-			performTVScan()
+			performTVScan(ctx)
 		})
 		if err != nil {
 			log.Fatal().Err(err).Msg("Failed to start Radarr scanner")
@@ -136,7 +158,7 @@ func pprofHandler() func(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
+	zerolog.TimeFieldFormat = time.StampMilli
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 
 	if config.GetConfig().EnablePrettyLog {
@@ -146,6 +168,8 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	utils.RegisterMetrics()
+	name, _ := os.Hostname()
+	log.Info().Str("hostname", name).Msg("Starting web")
 
 	go startWebserver(ctx)
 

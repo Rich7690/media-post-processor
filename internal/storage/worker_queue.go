@@ -11,6 +11,7 @@ import (
 
 	"github.com/bsm/redislock"
 	"github.com/go-redis/redis/v8"
+	"github.com/lucsky/cuid"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 )
@@ -29,12 +30,14 @@ type Job struct {
 	Status     JobStatus `json:"status,omitempty"`
 	StatusTime time.Time `json:"statusTime,omitempty"`
 	Attempt    int       `json:"attempt,omitempty"`
+	Version    int       `json:"version"`
 }
 
 type TranscodeJob struct {
 	Job
 	TranscodeType constants.TranscodeType `json:"transcodeType,omitempty"`
 	VideoFileImpl transcode.VideoFileImpl `json:"videoFileImpl,omitempty"`
+	VideoID       int64                   `json:"videoId,omitempty"`
 }
 
 func (t *TranscodeJob) MarshalBinary() (data []byte, err error) {
@@ -56,14 +59,61 @@ type TranscodeWorkerImpl struct {
 	lock   *redislock.Client
 }
 
-func GetTranscodeWorker(_ *redis.Client) TranscodeWorker {
-	redisAddr := config.GetConfig().RedisAddress
-	rdb := redis.NewClient(&redis.Options{
-		Addr: redisAddr.Host,
-		DB:   0, // use default DB
-	})
+type TranscodeFileWorkerImpl struct {
+	driver *Driver
+}
 
-	return TranscodeWorkerImpl{client: rdb, lock: redislock.New(rdb)}
+func (t TranscodeFileWorkerImpl) EnqueueJob(ctx context.Context, job *TranscodeJob) error {
+	job.ID = cuid.New()
+	job.Status = Created
+	job.StatusTime = time.Now()
+	return t.driver.Write("jobs", job.ID, job)
+}
+
+func (t TranscodeFileWorkerImpl) DequeueJob(ctx context.Context, work func(ctx context.Context, job TranscodeJob) error) error {
+	job := TranscodeJob{}
+
+	err := t.driver.GetRandom("jobs", &job)
+	if err != nil {
+		return err
+	}
+	if job.ID == "" {
+		select {
+		case <-time.After(5 * time.Second):
+		case <-ctx.Done():
+			return nil
+		}
+		return nil
+	}
+	job.Attempt++
+	job.Status = InProgress
+	job.StatusTime = time.Now()
+	err = t.driver.Write("jobs", job.ID, job)
+	if err != nil {
+		return errors.Wrap(err, "Failed to save job")
+	}
+
+	err = work(ctx, job)
+	if err != nil {
+		return err
+	}
+
+	return t.driver.Delete("jobs", job.ID)
+}
+
+func (t TranscodeFileWorkerImpl) HandleErrored(ctx context.Context) error {
+	return nil
+}
+
+func GetTranscodeWorker() TranscodeWorker {
+	workPath := config.GetConfig().WorkDirectory
+
+	client, err := New(workPath, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	return TranscodeFileWorkerImpl{client}
 }
 
 func (t TranscodeWorkerImpl) HandleErrored(ctx context.Context) error {
@@ -184,8 +234,14 @@ func (t TranscodeWorkerImpl) DequeueJob(ctx context.Context, work func(ctx conte
 	job := TranscodeJob{}
 
 	err = t.client.Get(ctx, "transcode-job:"+jobID).Scan(&job)
+	if err == redis.Nil {
+		return nil
+	}
 	if err != nil {
 		return errors.Wrap(err, "Failed to get job")
+	}
+	if job.Status == Done {
+		return nil
 	}
 
 	job.Attempt++
@@ -197,6 +253,7 @@ func (t TranscodeWorkerImpl) DequeueJob(ctx context.Context, work func(ctx conte
 		return err
 	}
 
+	log.Debug().Str("id", job.ID).Msg("Working on transcode job")
 	done := make(chan error, 1)
 
 	childCtx, cancel := context.WithCancel(ctx)

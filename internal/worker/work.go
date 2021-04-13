@@ -52,7 +52,7 @@ func (c *WorkerContext) Metrics(job *work.Job, next work.NextMiddlewareFunc) err
 	return err
 }
 
-var workerContext = WorkerContext{
+var workerContext = &WorkerContext{
 	GetTranscoder: GetTranscoder,
 	SonarrClient:  web.GetSonarrClient(),
 	RadarrClient:  web.GetRadarrClient(),
@@ -60,7 +60,7 @@ var workerContext = WorkerContext{
 	Sleep:         time.Sleep,
 }
 
-func GetWorkerContext() WorkerContext {
+func GetWorkerContext() *WorkerContext {
 	return workerContext
 }
 
@@ -88,33 +88,26 @@ type WorkerPoolImpl struct {
 	pool *work.WorkerPool
 }
 
-func (w WorkerPoolImpl) Middleware(fn interface{}) {
+func (w *WorkerPoolImpl) Middleware(fn interface{}) {
 	w.pool.Middleware(fn)
 }
-func (w WorkerPoolImpl) JobWithOptions(name string, jobOpts work.JobOptions, fn interface{}) {
+func (w *WorkerPoolImpl) JobWithOptions(name string, jobOpts work.JobOptions, fn interface{}) {
 	w.pool.JobWithOptions(name, jobOpts, fn)
 }
-func (w WorkerPoolImpl) Start() {
+func (w *WorkerPoolImpl) Start() {
 	w.pool.Start()
 }
-func (w WorkerPoolImpl) Stop() {
+func (w *WorkerPoolImpl) Stop() {
 	w.pool.Stop()
 }
 
-func StartWorkerPool(ctx context.Context, wctx WorkerContext, factory WorkerPoolFactory) {
+func StartWorkerPool(ctx context.Context, wctx *WorkerContext, factory WorkerPoolFactory) {
 	log.Info().Msg("Starting worker pool")
 	// Note: normally the worker context isn't shared and would be unique per job
 	// However, here we use it as a mechanism to inject dependencies into the job handler
-	pool := factory.NewWorkerPool(wctx, 20, config.GetConfig().JobQueueNamespace, &storage.RedisPool)
+	pool := factory.NewWorkerPool(*wctx, 3, config.GetConfig().JobQueueNamespace, &storage.RedisPool)
 	pool.Middleware(wctx.Log)
 	pool.Middleware(wctx.Metrics)
-
-	pool.JobWithOptions(constants.TranscodeJobType, work.JobOptions{
-		Priority:       1,
-		MaxFails:       3,
-		SkipDead:       false,
-		MaxConcurrency: 1,
-	}, wctx.TranscodeJobHandler)
 
 	pool.JobWithOptions(constants.UpdateSonarrJobName, work.JobOptions{
 		Priority:       2,

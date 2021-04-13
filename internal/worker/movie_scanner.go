@@ -1,29 +1,30 @@
 package worker
 
 import (
+	"context"
 	"media-web/internal/constants"
+	"media-web/internal/storage"
 	"media-web/internal/transcode"
 	"media-web/internal/web"
 	"path"
 
-	"github.com/gocraft/work"
 	"github.com/rs/zerolog/log"
 )
 
 // MovieScanner scans for movies to be converted into a consistent format
 type MovieScanner interface {
-	ScanForMovies() error
+	ScanForMovies(ctx context.Context) error
 	SearchForMissingMovies() error
 }
 
 type movieScannerImpl struct {
 	client    web.RadarrClient
-	scheduler WorkScheduler
+	tWorker   storage.TranscodeWorker
 }
 
 // NewMovieScanner creates a new instance of MovieScanner
-func NewMovieScanner(client web.RadarrClient, scheduler WorkScheduler) MovieScanner {
-	return movieScannerImpl{client: client, scheduler: scheduler}
+func NewMovieScanner(client web.RadarrClient, tWorker storage.TranscodeWorker) MovieScanner {
+	return movieScannerImpl{client: client, tWorker: tWorker}
 }
 
 func (m movieScannerImpl) SearchForMissingMovies() error {
@@ -34,7 +35,7 @@ func (m movieScannerImpl) SearchForMissingMovies() error {
 	return err
 }
 
-func (m movieScannerImpl) ScanForMovies() error {
+func (m movieScannerImpl) ScanForMovies(ctx context.Context) error {
 	movies, err := m.client.GetAllMovies()
 
 	if err != nil {
@@ -44,19 +45,21 @@ func (m movieScannerImpl) ScanForMovies() error {
 	for i := 0; i < len(movies); i++ {
 		movie := movies[i]
 		if movie.Downloaded {
-			should, reason, err := transcode.ShouldTranscode(transcode.VideoFileImpl{
+			video := transcode.VideoFileImpl{
 				FilePath:        path.Join(movie.Path, movie.MovieFile.RelativePath),
 				ContainerFormat: movie.MovieFile.MediaInfo.ContainerFormat,
 				VideoCodec:      movie.MovieFile.MediaInfo.VideoFormat,
-			})
+			}
+			should, reason, err := transcode.ShouldTranscode(video)
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to determine if we should transcode")
+				continue
 			}
 			if should {
 				log.Debug().Str("reason", reason).Msg("Found movie in wrong format: " + movie.MovieFile.RelativePath)
-				_, err := m.scheduler.EnqueueUnique(constants.TranscodeJobType, work.Q{
-					constants.TranscodeTypeKey: constants.Movie,
-					constants.MovieIDKey:       movie.ID,
+				err := m.tWorker.EnqueueJob(ctx, &storage.TranscodeJob{
+					TranscodeType: constants.Movie,
+					VideoFileImpl: video,
 				})
 				if err != nil {
 					log.Error().Err(err).Msg("Failed to enqueue movie transcode")
