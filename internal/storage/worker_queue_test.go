@@ -1,13 +1,13 @@
 package storage
 
 import (
-	//"context"
+	"context"
 	"testing"
-	//"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestWorkerQueue(t *testing.T) {
-	/*wk := GetTranscodeWorker()
+	wk := GetTranscodeWorker()
 
 	err := wk.EnqueueJob(context.Background(), &TranscodeJob{ VideoID: 1})
 	assert.NoError(t, err)
@@ -16,5 +16,5 @@ func TestWorkerQueue(t *testing.T) {
 		assert.Equal(t, int64(1), job.VideoID)
 		return nil
 	})
-	assert.NoError(t, err)*/
+	assert.NoError(t, err)
 }

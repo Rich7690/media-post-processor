@@ -10,6 +10,11 @@ on:
       - 'README.md'
 jobs:
   test:
+    services:
+      redis:
+        image: redis:6-alpine
+        ports:
+         - 6379:6379
     name: Test with Coverage
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -42,7 +47,7 @@ jobs:
       - run: git fetch --depth=1 origin "$GITHUB_HEAD_REF"
         if: github.event_name == 'pull_request'
       - name: Build Docker image
-        uses: docker/build-push-action@v1.1.0
+        uses: docker/build-push-action@v1
         with:
           username: ${{ secrets.DOCKER_USERNAME }} # optional
           password: ${{ secrets.DOCKER_PASSWORD }} # optional

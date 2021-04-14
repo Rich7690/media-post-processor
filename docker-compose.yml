@@ -3,7 +3,7 @@ version: "3.7"
 services:
   redis:
     container_name: redis
-    image: redis:5-alpine
+    image: redis:6-alpine
     command: --appendonly yes
     ports:
       - 6379:6379
