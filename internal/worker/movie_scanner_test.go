@@ -3,8 +3,11 @@ package worker
 import (
 	"context"
 	"errors"
+	"io/ioutil"
 	"media-web/internal/storage"
 	"media-web/internal/web"
+	"os"
+	"path"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -92,35 +95,39 @@ func TestSkipsIfAlreadyRightFormat(t *testing.T) {
 }
 
 func TestEnqueueIfProperFormat(t *testing.T) {
+	f, err := ioutil.TempFile("", "web-test-")
+	assert.NoError(t, err)
+	defer os.Remove(f.Name())
+
 	mockClient := MockRadarr{}
 	mockClient.getAllMovies = func() (movies []web.RadarrMovie, e error) {
-		movieList := []web.RadarrMovie{{Downloaded: true, MovieFile: web.MovieFile{RelativePath: "test.mkv"}}}
+		movieList := []web.RadarrMovie{{Downloaded: true, MovieFile: web.MovieFile{RelativePath: path.Base(f.Name())}, Path: path.Dir(f.Name())}}
 		return movieList, nil
 	}
 	w := mockWorker{}
 	w.On("EnqueueJob", mock.Anything, mock.Anything).Once().Return(nil, nil)
 	scanner := NewMovieScanner(mockClient, &w)
-	err := scanner.ScanForMovies(context.Background())
+	err = scanner.ScanForMovies(context.Background())
 
-	if err != nil {
-		t.Error("Error returned")
-	}
+	assert.NoError(t, err)
 	w.AssertExpectations(t)
 }
 
 func TestEnqueueAndIgnoresEnqueueError(t *testing.T) {
+	f, err := ioutil.TempFile("", "web-test-")
+	assert.NoError(t, err)
+	defer os.Remove(f.Name())
+
 	mockClient := MockRadarr{}
 	mockClient.getAllMovies = func() (movies []web.RadarrMovie, e error) {
-		movieList := []web.RadarrMovie{{Downloaded: true, MovieFile: web.MovieFile{RelativePath: "test.mkv"}}}
+		movieList := []web.RadarrMovie{{Downloaded: true, MovieFile: web.MovieFile{RelativePath: path.Base(f.Name())}, Path: path.Dir(f.Name())}}
 		return movieList, nil
 	}
 	w := mockWorker{}
 	w.On("EnqueueJob", mock.Anything, mock.Anything).Once().Return(nil, errors.New("boom"))
 	scanner := NewMovieScanner(mockClient, &w)
-	err := scanner.ScanForMovies(context.Background())
+	err = scanner.ScanForMovies(context.Background())
 
-	if err != nil {
-		t.Error("Error returned")
-	}
+	assert.NoError(t, err)
 	w.AssertExpectations(t)
 }
