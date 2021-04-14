@@ -12,11 +12,17 @@ jobs:
   lint:
     name: Run golangci-lint
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - uses: golangci/golangci-lint-action@v1.2.1
+      - uses: golangci/golangci-lint-action@v2
+        with:
+          version: v1.39.0
+        continue-on-error: true
+
   test:
     name: Test with Coverage
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
     - uses: actions/checkout@v2
     - run: git fetch --depth=1 origin "$GITHUB_HEAD_REF"

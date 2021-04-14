@@ -64,7 +64,6 @@ linters:
     - deadcode
     - depguard
     - dogsled
-    - dupl
     - errcheck
     - exhaustive
     - funlen
@@ -81,14 +80,13 @@ linters:
     - gosimple
     - govet
     - ineffassign
-    - interfacer
+    - exportloopref
     - lll
     - misspell
     - nakedret
     - noctx
     - nolintlint
     - rowserrcheck
-    - scopelint
     - staticcheck
     - structcheck
     - stylecheck
