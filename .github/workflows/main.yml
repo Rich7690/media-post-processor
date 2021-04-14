@@ -51,4 +51,4 @@ jobs:
           tag_with_sha: true # optional
           cache_froms: unknowndev7690/web:latest # optional
           add_git_labels: true # optional
-          push: ${{ startsWith(github.ref, 'refs/heads/master') && github.repository_owner == "Rich7690" }}
+          push: ${{ startsWith(github.ref, 'refs/heads/master') && github.repository_owner == 'Rich7690' }}
